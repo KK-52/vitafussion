@@ -1,0 +1,315 @@
+{% extends "base.html" %}
+{% block title %}Patient Input · VitaFusion AI{% endblock %}
+{% block topbar_title %}📋 Patient Data Input{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">📋 Patient Data Input</h1>
+  <p class="page-sub">Enter clinical data and upload imaging / ECG for multimodal AI analysis</p>
+</div>
+
+<!-- Demo Patient Selector -->
+<div class="card" style="margin-bottom:1.5rem;">
+  <div class="form-section-title">⚡ Quick Start — Demo Patients</div>
+  <div class="alert alert-info" style="margin-bottom:1rem;">
+    <span class="alert-icon">💡</span>
+    <span>Select a pre-built patient profile to instantly demo the platform with synthetic data.</span>
+  </div>
+  <div class="demo-grid" id="demoGrid">
+    <!-- Populated by JS -->
+  </div>
+</div>
+
+<!-- Main Form -->
+<form id="patientForm" enctype="multipart/form-data">
+
+  <!-- Patient Identity -->
+  <div class="form-section">
+    <div class="form-section-title">👤 Patient Identity</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Full Name</label>
+        <input type="text" id="name" class="form-control" placeholder="e.g. John Smith"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Age (years)</label>
+        <input type="number" id="age" class="form-control" min="18" max="100" value="45"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Gender</label>
+        <select id="gender" class="form-control">
+          <option value="Male">Male</option>
+          <option value="Female">Female</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Anthropometrics -->
+  <div class="form-section">
+    <div class="form-section-title">📐 Anthropometrics</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Height (cm)</label>
+        <input type="number" id="height_cm" class="form-control" min="100" max="250" value="165"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Weight (kg)</label>
+        <input type="number" id="weight_kg" class="form-control" min="20" max="300" value="70"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">BMI (auto-calculated)</label>
+        <input type="text" id="bmi_display" class="form-control" readonly/>
+      </div>
+    </div>
+  </div>
+
+  <!-- Vital Signs -->
+  <div class="form-section">
+    <div class="form-section-title">❤️ Vital Signs</div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Systolic BP (mmHg)</label><input type="number" id="systolic_bp" class="form-control" min="70" max="250" value="120"/></div>
+      <div class="form-group"><label class="form-label">Diastolic BP (mmHg)</label><input type="number" id="diastolic_bp" class="form-control" min="40" max="150" value="80"/></div>
+      <div class="form-group"><label class="form-label">Heart Rate (bpm)</label><input type="number" id="heart_rate" class="form-control" min="30" max="250" value="72"/></div>
+      <div class="form-group"><label class="form-label">SpO₂ (%)</label><input type="number" id="oxygen_saturation" class="form-control" min="70" max="100" value="98"/></div>
+    </div>
+  </div>
+
+  <!-- Lifestyle -->
+  <div class="form-section">
+    <div class="form-section-title">🌿 Lifestyle Factors</div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Smoking</label><select id="smoking" class="form-control"><option>Never</option><option>Former</option><option>Current</option></select></div>
+      <div class="form-group"><label class="form-label">Alcohol</label><select id="alcohol" class="form-control"><option>None</option><option>Moderate</option><option>Heavy</option></select></div>
+      <div class="form-group"><label class="form-label">Physical Activity</label><select id="physical_activity" class="form-control"><option>Sedentary</option><option>Light</option><option>Moderate</option><option>Active</option></select></div>
+      <div class="form-group"><label class="form-label">Sleep (hours/day)</label><input type="number" id="sleep_hours" class="form-control" min="2" max="14" step="0.5" value="7"/></div>
+    </div>
+  </div>
+
+  <!-- Medical History -->
+  <div class="form-section">
+    <div class="form-section-title">📋 Medical History</div>
+    <div class="checkbox-row">
+      <label class="checkbox-item"><input type="checkbox" id="diabetes_history"/> Diabetes History</label>
+      <label class="checkbox-item"><input type="checkbox" id="hypertension_history"/> Hypertension History</label>
+      <label class="checkbox-item"><input type="checkbox" id="family_heart_disease"/> Family History of Heart Disease</label>
+    </div>
+  </div>
+
+  <!-- Lab Values -->
+  <div class="form-section">
+    <div class="form-section-title">🧪 Laboratory Values (Optional)</div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Fasting Glucose (mg/dL)</label><input type="number" id="fasting_glucose" class="form-control" min="50" max="600" value="95"/></div>
+      <div class="form-group"><label class="form-label">HbA1c (%)</label><input type="number" id="hba1c" class="form-control" min="3" max="15" step="0.1" value="5.5"/></div>
+      <div class="form-group"><label class="form-label">Total Cholesterol (mg/dL)</label><input type="number" id="total_cholesterol" class="form-control" min="80" max="500" value="185"/></div>
+    </div>
+    <div class="form-row" style="margin-top:0.8rem;">
+      <div class="form-group"><label class="form-label">HDL Cholesterol (mg/dL)</label><input type="number" id="hdl_cholesterol" class="form-control" min="15" max="120" value="50"/></div>
+      <div class="form-group"><label class="form-label">Triglycerides (mg/dL)</label><input type="number" id="triglycerides" class="form-control" min="30" max="1500" value="135"/></div>
+      <div class="form-group"><label class="form-label">Creatinine (mg/dL)</label><input type="number" id="creatinine" class="form-control" min="0.3" max="15" step="0.1" value="0.95"/></div>
+    </div>
+  </div>
+
+  <!-- Image & ECG Uploads -->
+  <div class="form-section">
+    <div class="form-section-title">🖼️ Imaging & ECG Uploads</div>
+    <div class="grid grid-3">
+      <div>
+        <div class="upload-zone" id="retinalZone">
+          <div class="upload-icon">👁️</div>
+          <div class="upload-title">Retinal (Fundus) Image</div>
+          <div class="upload-hint">JPG · PNG · max 20MB</div>
+          <input type="file" id="retinal_image" accept="image/*"/>
+        </div>
+        <div class="upload-preview" id="retinalPreview"></div>
+      </div>
+      <div>
+        <div class="upload-zone" id="tongueZone">
+          <div class="upload-icon">👅</div>
+          <div class="upload-title">Tongue Image</div>
+          <div class="upload-hint">JPG · PNG · max 20MB</div>
+          <input type="file" id="tongue_image" accept="image/*"/>
+        </div>
+        <div class="upload-preview" id="tonguePreview"></div>
+      </div>
+      <div>
+        <div class="upload-zone" id="ecgZone">
+          <div class="upload-icon">📈</div>
+          <div class="upload-title">ECG Signal (CSV)</div>
+          <div class="upload-hint">CSV format · optional</div>
+          <input type="file" id="ecg_file" accept=".csv,.txt"/>
+        </div>
+        <div class="upload-preview" id="ecgPreview"></div>
+        <div class="form-group" style="margin-top:0.8rem;">
+          <label class="form-label">Or use synthetic ECG:</label>
+          <select id="ecg_type" class="form-control">
+            <option value="normal">Normal Sinus Rhythm</option>
+            <option value="afib">Atrial Fibrillation</option>
+            <option value="stemi">ST-Elevation (STEMI)</option>
+            <option value="bradycardia">Bradycardia</option>
+            <option value="tachycardia">Tachycardia</option>
+            <option value="pvc">PVC</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Submit -->
+  <div style="display:flex; gap:1rem; margin-top:1.5rem;">
+    <button type="submit" class="btn btn-primary btn-lg btn-full" id="analyzeBtn">
+      🧠 Run Multimodal Analysis
+    </button>
+  </div>
+</form>
+
+<!-- Quick Preview -->
+<div id="quickPreview" style="display:none; margin-top:2rem;">
+  <h3 style="font-size:1.2rem; font-weight:700; margin-bottom:1rem;">⚡ Quick Risk Preview</h3>
+  <div class="grid grid-5" id="previewCards"></div>
+  <div style="text-align:center; margin-top:1.5rem;">
+    <a href="/risk" class="btn btn-primary">📊 View Full Risk Assessment →</a>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  // ── BMI auto-calc ───────────────────────────────────────────
+  function updateBMI() {
+    const h = parseFloat(document.getElementById('height_cm').value) || 165;
+    const w = parseFloat(document.getElementById('weight_kg').value) || 70;
+    const bmi = (w / ((h / 100) ** 2)).toFixed(1);
+    const cls = bmi < 18.5 ? 'Underweight' : bmi < 25 ? 'Normal' : bmi < 30 ? 'Overweight' : 'Obese';
+    document.getElementById('bmi_display').value = `${bmi} kg/m² — ${cls}`;
+  }
+  document.getElementById('height_cm').addEventListener('input', updateBMI);
+  document.getElementById('weight_kg').addEventListener('input', updateBMI);
+  updateBMI();
+
+  // ── Image previews ──────────────────────────────────────────
+  setupImageUpload('retinal_image', 'retinalPreview');
+  setupImageUpload('tongue_image',  'tonguePreview');
+
+  // ── Load demo patients ──────────────────────────────────────
+  fetchDemoPatients().then(patients => {
+    const grid = document.getElementById('demoGrid');
+    patients.forEach(p => {
+      const div = document.createElement('div');
+      div.className = 'demo-patient-card';
+      div.dataset.id = p.id;
+      div.innerHTML = `
+        <div class="demo-avatar">${p.gender === 'Male' ? '🧔' : '👩'}</div>
+        <div class="demo-name">${p.name}</div>
+        <div class="demo-meta">${p.age}y · ${p.gender}</div>
+        <div class="demo-desc">${p.description.substring(0, 65)}...</div>
+      `;
+      div.addEventListener('click', () => loadDemoPatient(p.id));
+      grid.appendChild(div);
+    });
+  });
+
+  // ── Load demo ───────────────────────────────────────────────
+  window.loadDemoPatient = async function(id) {
+    document.querySelectorAll('.demo-patient-card').forEach(c => c.classList.remove('selected'));
+    const card = document.querySelector(`[data-id="${id}"]`);
+    if (card) card.classList.add('selected');
+
+    const data = await fetchDemoPatient(id);
+    VF.selectedDemo = id;
+    const cf = data.clinical_features;
+
+    // Fill form fields
+    document.getElementById('name').value             = data.name || '';
+    document.getElementById('age').value              = cf.age || 45;
+    document.getElementById('gender').value           = cf.gender || 'Male';
+    document.getElementById('height_cm').value        = cf.height_cm || 165;
+    document.getElementById('weight_kg').value        = cf.weight_kg || 70;
+    document.getElementById('systolic_bp').value      = cf.systolic_bp || 120;
+    document.getElementById('diastolic_bp').value     = cf.diastolic_bp || 80;
+    document.getElementById('heart_rate').value       = cf.heart_rate || 72;
+    document.getElementById('oxygen_saturation').value= cf.oxygen_saturation || 98;
+    document.getElementById('smoking').value          = cf.smoking || 'Never';
+    document.getElementById('alcohol').value          = cf.alcohol || 'None';
+    document.getElementById('physical_activity').value= cf.physical_activity || 'Moderate';
+    document.getElementById('sleep_hours').value      = cf.sleep_hours || 7;
+    document.getElementById('diabetes_history').checked    = !!cf.diabetes_history;
+    document.getElementById('hypertension_history').checked= !!cf.hypertension_history;
+    document.getElementById('family_heart_disease').checked= !!cf.family_heart_disease;
+    document.getElementById('fasting_glucose').value  = cf.fasting_glucose || 95;
+    document.getElementById('hba1c').value            = cf.hba1c || 5.5;
+    document.getElementById('total_cholesterol').value = cf.total_cholesterol || 185;
+    document.getElementById('hdl_cholesterol').value   = cf.hdl_cholesterol || 50;
+    document.getElementById('triglycerides').value     = cf.triglycerides || 135;
+    document.getElementById('creatinine').value        = cf.creatinine || 0.95;
+    updateBMI();
+    showToast(`Loaded ${data.name}'s profile`, 'success');
+  };
+
+  // ── Form submit ─────────────────────────────────────────────
+  document.getElementById('patientForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const fields = ['age','height_cm','weight_kg','systolic_bp','diastolic_bp','heart_rate',
+                    'oxygen_saturation','sleep_hours','fasting_glucose','hba1c',
+                    'total_cholesterol','hdl_cholesterol','triglycerides','creatinine'];
+    const selects = ['gender','smoking','alcohol','physical_activity'];
+    const checks  = ['diabetes_history','hypertension_history','family_heart_disease'];
+
+    const clinical = {};
+    fields.forEach(f => { clinical[f] = parseFloat(document.getElementById(f).value); });
+    selects.forEach(f => { clinical[f] = document.getElementById(f).value; });
+    checks.forEach(f => { clinical[f] = document.getElementById(f).checked; });
+
+    const h = clinical.height_cm / 100;
+    clinical.bmi = parseFloat((clinical.weight_kg / (h * h)).toFixed(1));
+
+    const patientInfo = {
+      name: document.getElementById('name').value || 'Anonymous',
+      age: clinical.age,
+      gender: clinical.gender,
+    };
+    VF.patientInfo  = patientInfo;
+    VF.clinicalData = clinical;
+
+    const fd = new FormData();
+    fd.append('clinical_data', JSON.stringify(clinical));
+    fd.append('patient_info',  JSON.stringify(patientInfo));
+    fd.append('ecg_type',      document.getElementById('ecg_type').value);
+
+    const retFile = document.getElementById('retinal_image').files[0];
+    const tngFile = document.getElementById('tongue_image').files[0];
+    const ecgFile = document.getElementById('ecg_file').files[0];
+    if (retFile) fd.append('retinal_image', retFile);
+    if (tngFile) fd.append('tongue_image',  tngFile);
+    if (ecgFile) fd.append('ecg_file',      ecgFile);
+    if (VF.selectedDemo) fd.append('demo_patient', VF.selectedDemo);
+
+    try {
+      const results = await runAnalysis(fd);
+      // Show quick preview
+      const scores = results.risk_scores || {};
+      const prev = document.getElementById('quickPreview');
+      const cards = document.getElementById('previewCards');
+      cards.innerHTML = '';
+      const icons = {cardiovascular:'🫀', diabetes:'🩸', hypertension:'💊', arrhythmia:'📊', metabolic:'⚗️'};
+      Object.entries(scores).forEach(([k, v]) => {
+        const col = riskColor(v);
+        const lv  = riskLevel(v);
+        cards.innerHTML += `
+          <div class="risk-card" style="--card-color:${col};">
+            <div style="font-size:1.4rem;">${icons[k]||'🔵'}</div>
+            <div style="font-size:2rem; font-weight:800; color:${col}; margin:0.5rem 0;">${Math.round(v)}%</div>
+            <div class="risk-disease">${formatDiseaseName(k)}</div>
+            <span class="risk-level-badge ${lv.cls}">${lv.label}</span>
+          </div>
+        `;
+      });
+      prev.style.display = 'block';
+      prev.scrollIntoView({ behavior: 'smooth' });
+    } catch(err) { /* handled in runAnalysis */ }
+  });
+});
+</script>
+{% endblock %}

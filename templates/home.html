@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>VitaFusion AI — Home</title>
+  <meta name="description" content="Your AI-powered multimodal health analysis dashboard."/>
+  <link rel="stylesheet" href="/static/css/vitafusion-new.css"/>
+</head>
+<body class="home-page">
+
+<!-- Nav -->
+<nav class="home-nav">
+  <div class="home-nav-logo">
+    <span class="icon">🫀</span>
+    Vita<span>Fusion</span> AI
+  </div>
+  <div class="home-nav-right">
+    <div class="home-nav-user">
+      <div class="user-avatar">{{ user.name[0] | upper if user.name else '?' }}</div>
+      <span>{{ user.name or 'User' }}</span>
+    </div>
+    <a href="/dashboard"><button class="nav-btn">Dashboard</button></a>
+    <a href="/logout"><button class="nav-btn">Sign out</button></a>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="home-hero">
+  <p class="home-greeting">👋 Welcome back, {{ user.name.split()[0] if user.name else 'there' }}</p>
+  <h1 class="home-title">Your <span class="highlight">Health Intelligence</span><br/>Hub</h1>
+  <p class="home-tagline">Multimodal AI analysis of eye, tongue & ECG — in under 60 seconds.</p>
+
+  <a href="/analyze" class="cta-btn" id="startAnalysisBtn">
+    <div class="pulse-ring"></div>
+    <span>🔬</span>
+    Start Analysis
+    <span>→</span>
+  </a>
+</section>
+
+<!-- Stats -->
+<div class="home-stats">
+  <div class="stat-card">
+    <div class="stat-val">{{ total_analyses }}</div>
+    <div class="stat-lbl">Analyses Done</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-val">{{ active_bookings }}</div>
+    <div class="stat-lbl">Active Bookings</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-val">
+      {% if last_category == 'Good' %}🟢
+      {% elif last_category == 'Medium' %}🟡
+      {% elif last_category == 'Immediate' %}🔴
+      {% else %}—
+      {% endif %}
+      {{ last_category }}
+    </div>
+    <div class="stat-lbl">Last Result</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-val">{{ user.city | capitalize if user.city else '—' }}</div>
+    <div class="stat-lbl">Your City</div>
+  </div>
+</div>
+
+<!-- Feature cards -->
+<div class="home-features">
+  <div class="feature-card">
+    <div class="feature-icon">👁️</div>
+    <div class="feature-title">Retinal Analysis</div>
+    <div class="feature-desc">AI scans your eye image for signs of diabetic retinopathy and cardiovascular markers.</div>
+  </div>
+  <div class="feature-card">
+    <div class="feature-icon">👅</div>
+    <div class="feature-title">Tongue Diagnosis</div>
+    <div class="feature-desc">Traditional diagnostic signals combined with AI to assess metabolic and systemic health.</div>
+  </div>
+  <div class="feature-card">
+    <div class="feature-icon">📈</div>
+    <div class="feature-title">ECG Insights</div>
+    <div class="feature-desc">Detect arrhythmia, HRV anomalies, and cardiac risk from a simple ECG file upload.</div>
+  </div>
+  <div class="feature-card">
+    <div class="feature-icon">🧠</div>
+    <div class="feature-title">Fusion AI</div>
+    <div class="feature-desc">Our proprietary fusion model combines all modalities for a comprehensive health risk score.</div>
+  </div>
+</div>
+
+<!-- Chatbot Widget -->
+<button class="chatbot-toggle" id="chatToggle" title="Ask VitaFusion Assistant">
+  <div class="pulse"></div>
+  🤖
+</button>
+
+<div class="chatbot-panel" id="chatPanel">
+  <div class="chat-header">
+    <span class="chat-avatar">🤖</span>
+    <div>
+      <div class="chat-title">VitaFusion Assistant</div>
+      <div class="chat-status">Online</div>
+    </div>
+    <span class="chat-close" onclick="toggleChat()">✕</span>
+  </div>
+  <div class="chat-messages" id="chatMessages">
+    <div class="msg msg-bot">
+      <div class="msg-bubble">Hi {{ user.name.split()[0] if user.name else 'there' }}! 👋 I'm your VitaFusion health assistant. How can I help you today?</div>
+    </div>
+  </div>
+  <div class="chat-quick-btns" id="quickBtns">
+    <button class="quick-btn" onclick="quickAsk('How does analysis work?')">How does it work?</button>
+    <button class="quick-btn" onclick="quickAsk('What images do I need?')">What images?</button>
+    <button class="quick-btn" onclick="quickAsk('What does Immediate mean?')">Immediate category?</button>
+    <button class="quick-btn" onclick="quickAsk('How to book a hospital?')">Book hospital?</button>
+  </div>
+  <div class="chat-input-row">
+    <input class="chat-input" id="chatInput" placeholder="Ask me anything…" onkeydown="if(event.key==='Enter') sendChat()"/>
+    <button class="chat-send" onclick="sendChat()">➤</button>
+  </div>
+</div>
+
+<script>
+  // ── Chatbot ──────────────────────────────────────────────────────────────
+  const RESPONSES = {
+    'how does analysis work': 'Click <strong>Start Analysis</strong>, then upload your eye photo, tongue photo, and optionally an ECG file. Our AI processes all inputs and returns a health score in under 60 seconds! 🔬',
+    'what images do i need': 'You need: 👁️ <strong>Retinal/eye image</strong> — a clear close-up of your eye, 👅 <strong>Tongue image</strong> — under good lighting, 📈 <strong>ECG file</strong> — a CSV export (optional). You can skip any step!',
+    'what does immediate mean': '🔴 <strong>Immediate</strong> means your risk score is high and you should seek medical attention soon. We\'ll offer to book a nearby hospital appointment with a token for you automatically.',
+    'how to book a hospital': 'If your result is <strong>Immediate</strong>, a booking prompt appears automatically. You can also go to <strong>Results → Book Hospital</strong>. We\'ll assign a confirmed token and (simulated) send it via SMS! 🏥',
+    'is my data safe': 'Your data stays on this device only — we don\'t upload personal health data to any cloud. Images are processed locally and discarded after analysis. 🔒',
+    'what is good category': '🟢 <strong>Good</strong> means your risk scores are low (< 40%). Keep up your healthy lifestyle and schedule a follow-up in 6 months!',
+    'what is medium category': '🟡 <strong>Medium</strong> means some risk indicators are elevated (40–70%). We recommend consulting a doctor within the next few weeks.',
+    'hello': 'Hello! 👋 I\'m here to help you understand your health results and guide you through VitaFusion. What would you like to know?',
+    'hi': 'Hi there! 👋 Ask me anything about your health analysis, categories, or hospital booking.',
+    'help': 'I can help with: ℹ️ How the analysis works, 📊 Understanding your health category, 🏥 Hospital booking, 🔒 Data privacy. Just ask!',
+  };
+
+  function toggleChat() {
+    document.getElementById('chatPanel').classList.toggle('open');
+    if (document.getElementById('chatPanel').classList.contains('open')) {
+      document.getElementById('chatInput').focus();
+    }
+  }
+  document.getElementById('chatToggle').addEventListener('click', toggleChat);
+
+  function quickAsk(q) { document.getElementById('chatInput').value = q; sendChat(); }
+
+  function addMsg(text, isBot) {
+    const msgs = document.getElementById('chatMessages');
+    const div  = document.createElement('div');
+    div.className = 'msg ' + (isBot ? 'msg-bot' : 'msg-user');
+    div.innerHTML  = `<div class="msg-bubble">${text}</div>`;
+    msgs.appendChild(div);
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+
+  function showTyping() {
+    const msgs = document.getElementById('chatMessages');
+    const div  = document.createElement('div');
+    div.className = 'msg msg-bot'; div.id = 'typingIndicator';
+    div.innerHTML  = '<div class="msg-bubble"><div class="typing-dots"><span></span><span></span><span></span></div></div>';
+    msgs.appendChild(div);
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+  function hideTyping() {
+    const el = document.getElementById('typingIndicator');
+    if (el) el.remove();
+  }
+
+  function getResponse(text) {
+    const lower = text.toLowerCase().trim();
+    for (const [key, val] of Object.entries(RESPONSES)) {
+      if (lower.includes(key)) return val;
+    }
+    return "I'm not sure about that. Try asking about: <em>analysis, health categories, hospital booking, or data privacy</em>. 😊";
+  }
+
+  async function sendChat() {
+    const input = document.getElementById('chatInput');
+    const text  = input.value.trim();
+    if (!text) return;
+    input.value = '';
+    document.getElementById('quickBtns').style.display = 'none';
+    addMsg(text, false);
+    showTyping();
+    await new Promise(r => setTimeout(r, 800 + Math.random() * 600));
+    hideTyping();
+    addMsg(getResponse(text), true);
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% block title %}VitaFusion AI — Multimodal Healthcare Intelligence{% endblock %}
+{% block topbar_title %}Home{% endblock %}
+
+{% block content %}
+<!-- Hero -->
+<section class="hero animate-fadeup">
+  <div class="hero-eyebrow">🧬 Multimodal Healthcare AI · Research Platform</div>
+  <h1 class="hero-title">VitaFusion AI</h1>
+  <p class="hero-sub">
+    An intelligent health-risk assessment platform combining retinal imaging, tongue analysis,
+    ECG signals, and clinical data — powered by deep learning, Explainable AI, and LLM-based
+    clinical interpretation.
+  </p>
+  <div class="hero-actions">
+    <a href="/patient" class="btn btn-primary btn-lg">📋 Start Patient Analysis</a>
+    <a href="/about" class="btn btn-outline btn-lg">ℹ️ Learn More</a>
+  </div>
+</section>
+
+<!-- Stats -->
+<div class="grid grid-5" style="margin-bottom:2.5rem;">
+  <div class="stat-card"><div class="stat-value">4</div><div class="stat-label">Modalities Fused</div></div>
+  <div class="stat-card"><div class="stat-value">5</div><div class="stat-label">Diseases Detected</div></div>
+  <div class="stat-card"><div class="stat-value" style="color:#7C3AED;">XAI</div><div class="stat-label">Explainable AI</div></div>
+  <div class="stat-card"><div class="stat-value" style="color:#F59E0B;">LLM</div><div class="stat-label">Clinical Reports</div></div>
+  <div class="stat-card"><div class="stat-value" style="color:#22C55E;">Live</div><div class="stat-label">Real-time Analysis</div></div>
+</div>
+
+<!-- Input Modalities -->
+<h2 style="font-size:1.4rem; font-weight:700; margin-bottom:1.2rem; display:flex; align-items:center; gap:8px;">
+  🔬 Input Modalities
+</h2>
+<div class="grid grid-4" style="margin-bottom:2.5rem;">
+  <div class="modality-card" style="--mod-color:#00D4FF;">
+    <div class="mod-icon">👁️</div>
+    <div class="mod-title">Retinal (Fundus) Image</div>
+    <p style="color:var(--text-muted); font-size:0.82rem; line-height:1.6;">
+      Analyzes diabetic retinopathy grades, vessel density, optic disc health via ResNet-50 CNN.
+    </p>
+  </div>
+  <div class="modality-card" style="--mod-color:#7C3AED;">
+    <div class="mod-icon">👅</div>
+    <div class="mod-title">Tongue Image</div>
+    <p style="color:var(--text-muted); font-size:0.82rem; line-height:1.6;">
+      Color, coating, moisture analysis using EfficientNet-B0 — linked to metabolic and cardiovascular indicators.
+    </p>
+  </div>
+  <div class="modality-card" style="--mod-color:#EF4444;">
+    <div class="mod-icon">📈</div>
+    <div class="mod-title">ECG Signal</div>
+    <p style="color:var(--text-muted); font-size:0.82rem; line-height:1.6;">
+      12-lead ECG processing with 1D-CNN + BiLSTM — detects arrhythmias, STEMI, and QRS abnormalities.
+    </p>
+  </div>
+  <div class="modality-card" style="--mod-color:#22C55E;">
+    <div class="mod-icon">🧾</div>
+    <div class="mod-title">Clinical Data</div>
+    <p style="color:var(--text-muted); font-size:0.82rem; line-height:1.6;">
+      Demographics, vitals, lifestyle, history, and labs encoded via deep MLP with residual connections.
+    </p>
+  </div>
+</div>
+
+<!-- Pipeline -->
+<h2 style="font-size:1.4rem; font-weight:700; margin-bottom:1rem; display:flex; align-items:center; gap:8px;">
+  🤖 AI Pipeline
+</h2>
+<div class="pipeline" style="margin-bottom:2.5rem;">
+  <div class="pipeline-step"><span class="ps-icon">📥</span><span class="ps-name">Input</span><span class="ps-sub">4 Modalities</span></div>
+  <span class="pipeline-arrow">→</span>
+  <div class="pipeline-step"><span class="ps-icon">⚙️</span><span class="ps-name">Preprocess</span><span class="ps-sub">CLAHE · Filter</span></div>
+  <span class="pipeline-arrow">→</span>
+  <div class="pipeline-step"><span class="ps-icon">🧠</span><span class="ps-name">Encode</span><span class="ps-sub">CNN · LSTM · MLP</span></div>
+  <span class="pipeline-arrow">→</span>
+  <div class="pipeline-step"><span class="ps-icon">🔀</span><span class="ps-name">Fusion</span><span class="ps-sub">Cross-Attention</span></div>
+  <span class="pipeline-arrow">→</span>
+  <div class="pipeline-step"><span class="ps-icon">🎯</span><span class="ps-name">Predict</span><span class="ps-sub">5 Diseases</span></div>
+  <span class="pipeline-arrow">→</span>
+  <div class="pipeline-step"><span class="ps-icon">🔍</span><span class="ps-name">XAI</span><span class="ps-sub">Grad-CAM · SHAP</span></div>
+  <span class="pipeline-arrow">→</span>
+  <div class="pipeline-step"><span class="ps-icon">📋</span><span class="ps-name">Report</span><span class="ps-sub">LLM Generated</span></div>
+</div>
+
+<!-- Diseases -->
+<h2 style="font-size:1.4rem; font-weight:700; margin-bottom:1.2rem; display:flex; align-items:center; gap:8px;">
+  🏥 Health Outcomes Predicted
+</h2>
+<div class="grid grid-5" style="margin-bottom:2.5rem;">
+  <div class="modality-card" style="--mod-color:#EF4444; border-top:none; border-left:3px solid #EF4444;">
+    <div style="font-size:1.6rem;">🫀</div>
+    <div style="font-weight:700; color:#EF4444; font-size:0.88rem; margin:0.4rem 0;">Cardiovascular</div>
+    <div style="color:var(--text-dim); font-size:0.73rem;">CAD · Heart Attack · Heart Failure</div>
+  </div>
+  <div class="modality-card" style="--mod-color:#F59E0B; border-top:none; border-left:3px solid #F59E0B;">
+    <div style="font-size:1.6rem;">🩸</div>
+    <div style="font-weight:700; color:#F59E0B; font-size:0.88rem; margin:0.4rem 0;">Diabetes</div>
+    <div style="color:var(--text-dim); font-size:0.73rem;">Type 2 DM · Prediabetes</div>
+  </div>
+  <div class="modality-card" style="--mod-color:#8B5CF6; border-top:none; border-left:3px solid #8B5CF6;">
+    <div style="font-size:1.6rem;">💊</div>
+    <div style="font-weight:700; color:#8B5CF6; font-size:0.88rem; margin:0.4rem 0;">Hypertension</div>
+    <div style="color:var(--text-dim); font-size:0.73rem;">High BP · Vascular Risk</div>
+  </div>
+  <div class="modality-card" style="--mod-color:#00D4FF; border-top:none; border-left:3px solid #00D4FF;">
+    <div style="font-size:1.6rem;">📊</div>
+    <div style="font-weight:700; color:#00D4FF; font-size:0.88rem; margin:0.4rem 0;">Arrhythmia</div>
+    <div style="color:var(--text-dim); font-size:0.73rem;">AFib · STEMI · LBBB · PVC</div>
+  </div>
+  <div class="modality-card" style="--mod-color:#10B981; border-top:none; border-left:3px solid #10B981;">
+    <div style="font-size:1.6rem;">⚗️</div>
+    <div style="font-weight:700; color:#10B981; font-size:0.88rem; margin:0.4rem 0;">Metabolic Syndrome</div>
+    <div style="color:var(--text-dim); font-size:0.73rem;">Dyslipidemia · Obesity · IR</div>
+  </div>
+</div>
+
+<!-- CTA -->
+<div style="max-width:600px; margin:0 auto;">
+  <div class="card card-glow" style="text-align:center; padding:2.5rem;">
+    <div style="font-size:2.5rem; margin-bottom:1rem;">🧬</div>
+    <h3 style="font-size:1.2rem; font-weight:700; margin-bottom:0.5rem;">Ready to Analyze a Patient?</h3>
+    <p style="color:var(--text-muted); font-size:0.88rem; margin-bottom:1.5rem;">
+      Upload clinical data and imaging to get a comprehensive health risk assessment with explainability.
+    </p>
+    <a href="/patient" class="btn btn-primary btn-lg">⚡ Begin Analysis</a>
+  </div>
+</div>
+
+<!-- Disclaimer -->
+<div class="alert alert-info" style="margin-top:2rem;">
+  <span class="alert-icon">⚕️</span>
+  <div>
+    <strong>Disclaimer:</strong> VitaFusion AI is a research prototype for educational purposes only.
+    Not a medical device. Always consult a healthcare professional.
+  </div>
+</div>
+{% endblock %}

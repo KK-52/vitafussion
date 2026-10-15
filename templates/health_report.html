@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+{% block title %}Health Report · VitaFusion AI{% endblock %}
+{% block topbar_title %}📄 Health Report{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">📄 AI-Generated Health Report</h1>
+  <p class="page-sub">LLM-powered clinical interpretation with personalized recommendations</p>
+</div>
+
+<div id="noData" class="card" style="text-align:center; padding:4rem 2rem;">
+  <div style="font-size:4rem; margin-bottom:1rem;">📄</div>
+  <h2 style="font-weight:700; margin-bottom:0.5rem;">No Analysis Yet</h2>
+  <p style="color:var(--text-muted); margin-bottom:1.5rem;">Complete patient analysis first to generate a health report.</p>
+  <a href="/patient" class="btn btn-primary">📋 Go to Patient Input</a>
+</div>
+
+<div id="reportContent" style="display:none;">
+  <!-- Controls -->
+  <div class="card" style="margin-bottom:1.5rem;">
+    <div style="display:flex; gap:1rem; align-items:center; flex-wrap:wrap;">
+      <div class="form-group" style="flex:1; min-width:180px;">
+        <label class="form-label">Report Style</label>
+        <select id="reportStyle" class="form-control">
+          <option value="clinical">🏥 Clinical (for healthcare providers)</option>
+          <option value="patient-friendly">💬 Patient-Friendly (easy to understand)</option>
+          <option value="summary">📝 Brief Summary</option>
+        </select>
+      </div>
+      <div style="display:flex; gap:0.5rem; align-items:flex-end; padding-top:1rem;">
+        <button class="btn btn-primary" onclick="generateHealthReport()">📋 Generate Report</button>
+        <button class="btn btn-outline" onclick="printReport()">🖨️ Print</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Report Loading -->
+  <div id="reportLoading" style="display:none; text-align:center; padding:3rem;">
+    <div style="font-size:2rem; animation: pulse 1.5s infinite;">🧠</div>
+    <div style="color:var(--text-muted); margin-top:1rem;">Generating clinical report...</div>
+  </div>
+
+  <!-- Report Body -->
+  <div id="reportBody" class="report-body" style="display:none;"></div>
+
+  <!-- Fallback notice -->
+  <div id="reportFallback" style="display:none;" class="alert alert-warning" style="margin-top:1rem;">
+    <span class="alert-icon">ℹ️</span>
+    <div>
+      This report was generated using a <strong>template engine</strong> (no LLM API key configured).
+      For AI-powered reports, configure an LLM provider in your <code>.env</code> file.
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const data = getResults();
+  if (!data || !data.risk_scores) return;
+
+  document.getElementById('noData').style.display = 'none';
+  document.getElementById('reportContent').style.display = 'block';
+});
+
+async function generateHealthReport() {
+  const data = getResults();
+  if (!data) return;
+
+  const reportBody = document.getElementById('reportBody');
+  const loading    = document.getElementById('reportLoading');
+
+  reportBody.style.display = 'none';
+  loading.style.display = 'block';
+
+  const patient  = data.patient_info || JSON.parse(sessionStorage.getItem('vf_patient') || '{}');
+  const clinical = JSON.parse(sessionStorage.getItem('vf_clinical') || '{}');
+
+  const payload = {
+    patient_info:        patient,
+    risk_scores:         data.risk_scores,
+    confidence_scores:   data.confidence_scores,
+    retinal_findings:    data.retinal || null,
+    tongue_findings:     data.tongue || null,
+    ecg_findings:        data.ecg || null,
+    clinical_features:   clinical,
+    feature_importances: data.clinical ? data.clinical.feature_importances : null,
+    report_style:        document.getElementById('reportStyle').value,
+  };
+
+  try {
+    const res = await generateReport(payload);
+    loading.style.display = 'none';
+
+    if (res.status === 'ok' && res.report) {
+      reportBody.innerHTML = marked.parse(res.report);
+      reportBody.style.display = 'block';
+      showToast('Report generated successfully', 'success');
+    } else {
+      showToast(res.message || 'Report generation failed', 'error');
+    }
+  } catch(e) {
+    loading.style.display = 'none';
+    showToast('Error: ' + e.message, 'error');
+  }
+}
+
+function printReport() {
+  const body = document.getElementById('reportBody');
+  if (!body || body.style.display === 'none') {
+    showToast('Generate a report first', 'warning');
+    return;
+  }
+  const printWin = window.open('', '_blank');
+  printWin.document.write(`
+    <html><head>
+      <title>VitaFusion AI Health Report</title>
+      <style>
+        body { font-family: 'Georgia', serif; padding: 2rem; color: #1a1a1a; line-height: 1.8; max-width: 800px; margin: 0 auto; }
+        h1 { font-size: 1.4rem; color: #0066cc; border-bottom: 2px solid #0066cc; padding-bottom: 0.5rem; }
+        h2 { font-size: 1.1rem; color: #333; border-bottom: 1px solid #ddd; padding-bottom: 0.3rem; margin-top: 1.5rem; }
+        h3 { font-size: 0.95rem; color: #555; }
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+        th, td { padding: 0.5rem 0.8rem; border: 1px solid #ddd; text-align: left; font-size: 0.9rem; }
+        th { background: #f5f5f5; font-weight: 600; }
+        blockquote { border-left: 3px solid #f59e0b; padding: 0.5rem 1rem; background: #fff8e1; margin: 1rem 0; }
+        ul, ol { padding-left: 1.5rem; }
+        li { margin: 0.3rem 0; }
+        @media print { body { padding: 0; } }
+      </style>
+    </head><body>${body.innerHTML}</body></html>
+  `);
+  printWin.document.close();
+  printWin.print();
+}
+</script>
+{% endblock %}

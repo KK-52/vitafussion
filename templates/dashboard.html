@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>VitaFusion AI — Dashboard</title>
+  <link rel="stylesheet" href="/static/css/vitafusion-new.css"/>
+</head>
+<body class="dash-page">
+
+<header class="dash-header">
+  <div class="dash-logo">🫀 Vita<span>Fusion</span> AI</div>
+  <div style="display:flex;gap:12px;">
+    <a href="/home"><button class="nav-btn">🏠 Home</button></a>
+    <a href="/analyze"><button class="nav-btn">🔬 New Analysis</button></a>
+    <a href="/logout"><button class="nav-btn">Sign out</button></a>
+  </div>
+</header>
+
+<div class="dash-body">
+
+  <!-- Profile -->
+  <div class="dash-profile">
+    <div class="dash-avatar">{{ user.name[0] | upper if user.name else '?' }}</div>
+    <div>
+      <div class="dash-name">{{ user.name or 'User' }}</div>
+      <div class="dash-meta">
+        <span>📱 +91 {{ user.phone[-10:] if user.phone else '—' }}</span>
+        <span>🏙️ {{ user.city | capitalize if user.city else '—' }}</span>
+        {% if user.address %}
+        <span>📍 {{ user.address }}</span>
+        {% endif %}
+        <span>📅 Since {{ user.registered_at[:10] if user.registered_at else '—' }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Active Bookings -->
+  <h2 class="section-title">🏥 Active Appointments</h2>
+  {% if bookings %}
+  <div class="bookings-list">
+    {% for b in bookings %}
+    <div class="booking-item">
+      <div class="booking-token">{{ b.token }}</div>
+      <div class="booking-info">
+        <div class="booking-name">{{ b.hospital_name }}</div>
+        <div style="font-size:13px;color:var(--text-muted);margin-bottom:2px;">📍 {{ b.hospital_address }}</div>
+        <div class="booking-date">📞 {{ b.hospital_phone }} &nbsp;·&nbsp; Booked {{ b.booked_at[:10] if b.booked_at else '' }}</div>
+      </div>
+      <div class="booking-status">{{ b.status or 'Confirmed' }}</div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state" style="padding:40px 20px;">
+    <div class="empty-icon">🏥</div>
+    <div class="empty-text">No active appointments</div>
+    <div style="font-size:13px;color:var(--text-dim);margin-top:8px;">Appointments appear here when your health category is <strong>Immediate</strong>.</div>
+  </div>
+  {% endif %}
+
+  <!-- Analysis History -->
+  <h2 class="section-title" style="margin-top:48px;">📊 Analysis History</h2>
+  {% if analyses %}
+  <div class="analyses-list">
+    {% for a in analyses | reverse %}
+    <div class="analysis-item">
+      <div class="analysis-dot {{ a.category or 'Good' }}"></div>
+      <div class="analysis-info">
+        <div class="analysis-cat">{{ a.category or 'Good' }}</div>
+        <div class="analysis-time">{{ a.timestamp[:19].replace('T',' ') if a.timestamp else '—' }} &nbsp;·&nbsp; ID: {{ a.id or '—' }}</div>
+        {% if a.booking_token %}
+        <div style="margin-top:4px;"><span class="badge-chip immediate" style="font-size:11px;">🏥 Token: {{ a.booking_token }}</span></div>
+        {% endif %}
+      </div>
+      <div class="analysis-risk" style="color:
+        {% if a.category == 'Immediate' %}var(--immediate)
+        {% elif a.category == 'Medium' %}var(--medium)
+        {% else %}var(--good){% endif %}">
+        {{ (a.max_risk * 100) | round | int }}%
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-icon">📊</div>
+    <div class="empty-text">No analyses yet</div>
+    <div style="margin-top:20px;">
+      <a href="/analyze" class="cta-btn" style="display:inline-flex;font-size:15px;padding:14px 32px;">Start your first analysis →</a>
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+</body>
+</html>

@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{% block title %}VitaFusion AI{% endblock %}</title>
+  <meta name="description" content="{% block description %}Multimodal Healthcare Intelligence Platform{% endblock %}"/>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+
+  <!-- Plotly.js -->
+  <script src="https://cdn.plot.ly/plotly-2.30.0.min.js"></script>
+
+  <!-- Marked.js for Markdown rendering -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+  <!-- Main CSS -->
+  <link rel="stylesheet" href="/static/css/style.css"/>
+
+  {% block head_extra %}{% endblock %}
+</head>
+<body>
+
+<!-- ── Sidebar Navigation ──────────────────────────────────────────────── -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">🫀</div>
+    <div class="logo-text">
+      <span class="logo-name">VitaFusion</span>
+      <span class="logo-badge">AI</span>
+    </div>
+  </div>
+
+  <nav class="sidebar-nav">
+    <a href="/"       class="nav-item {% if request.url.path == '/'       %}active{% endif %}">
+      <span class="nav-icon">🏠</span><span class="nav-label">Home</span>
+    </a>
+    <a href="/patient" class="nav-item {% if request.url.path == '/patient' %}active{% endif %}">
+      <span class="nav-icon">📋</span><span class="nav-label">Patient Input</span>
+    </a>
+    <a href="/risk"   class="nav-item {% if request.url.path == '/risk'   %}active{% endif %}">
+      <span class="nav-icon">📊</span><span class="nav-label">Risk Assessment</span>
+    </a>
+    <a href="/xai"    class="nav-item {% if request.url.path == '/xai'    %}active{% endif %}">
+      <span class="nav-icon">🔬</span><span class="nav-label">XAI Insights</span>
+    </a>
+    <a href="/report" class="nav-item {% if request.url.path == '/report' %}active{% endif %}">
+      <span class="nav-icon">📄</span><span class="nav-label">Health Report</span>
+    </a>
+    <a href="/about"  class="nav-item {% if request.url.path == '/about'  %}active{% endif %}">
+      <span class="nav-icon">ℹ️</span><span class="nav-label">About</span>
+    </a>
+    <div style="height:1px;background:#1F2937;margin:8px 12px;"></div>
+    <a href="/dataset" class="nav-item {% if request.url.path == '/dataset' %}active{% endif %}">
+      <span class="nav-icon">📡</span><span class="nav-label">PTB-XL Dataset</span>
+    </a>
+  </nav>
+
+  <div class="sidebar-status" id="sidebarStatus">
+    <div class="status-dot idle"></div>
+    <span class="status-text">Awaiting Input</span>
+  </div>
+
+  <div class="sidebar-footer">
+    <div class="sf-version">v1.0.0 · Research Prototype</div>
+    <div class="sf-copy">© 2025 VitaFusion AI Team</div>
+  </div>
+</aside>
+
+<!-- ── Topbar ──────────────────────────────────────────────────────────── -->
+<header class="topbar">
+  <button class="topbar-menu" id="sidebarToggle" aria-label="Toggle menu">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <line x1="3" y1="6"  x2="21" y2="6"/>
+      <line x1="3" y1="12" x2="21" y2="12"/>
+      <line x1="3" y1="18" x2="21" y2="18"/>
+    </svg>
+  </button>
+  <div class="topbar-title">{% block topbar_title %}{% endblock %}</div>
+  <div class="topbar-actions">
+    <div class="analysis-badge" id="analysisBadge" style="display:none">
+      <span class="badge-dot"></span> Analysis Ready
+    </div>
+  </div>
+</header>
+
+<!-- ── Main Content ────────────────────────────────────────────────────── -->
+<main class="main-content">
+  {% block content %}{% endblock %}
+</main>
+
+<!-- ── Loading Overlay ─────────────────────────────────────────────────── -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="loading-card">
+    <div class="loading-rings">
+      <div class="ring ring-1"></div>
+      <div class="ring ring-2"></div>
+      <div class="ring ring-3"></div>
+      <div class="ring-icon">🧠</div>
+    </div>
+    <div class="loading-title">Running Multimodal Analysis</div>
+    <div class="loading-steps" id="loadingSteps">
+      <div class="ls-step active" id="ls-clinical">⚙️ Processing clinical data...</div>
+      <div class="ls-step"       id="ls-retinal" >👁️ Analyzing retinal image...</div>
+      <div class="ls-step"       id="ls-tongue"  >👅 Analyzing tongue image...</div>
+      <div class="ls-step"       id="ls-ecg"     >📈 Processing ECG signal...</div>
+      <div class="ls-step"       id="ls-fusion"  >🔀 Fusing modalities...</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Toast notifications ─────────────────────────────────────────────── -->
+<div id="toastContainer"></div>
+
+<!-- ── Main JS ─────────────────────────────────────────────────────────── -->
+<script src="/static/js/app.js"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

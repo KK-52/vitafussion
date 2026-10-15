@@ -1,0 +1,242 @@
+{% extends "base.html" %}
+{% block title %}XAI Insights · VitaFusion AI{% endblock %}
+{% block topbar_title %}🔬 Explainable AI Insights{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">🔬 Explainable AI Insights</h1>
+  <p class="page-sub">Grad-CAM · SHAP · ECG Attribution — understanding <em>why</em> the model predicts</p>
+</div>
+
+<div id="noData" class="card" style="text-align:center; padding:4rem 2rem;">
+  <div style="font-size:4rem; margin-bottom:1rem;">🔬</div>
+  <h2 style="font-weight:700; margin-bottom:0.5rem;">No Analysis Yet</h2>
+  <p style="color:var(--text-muted); margin-bottom:1.5rem;">Complete patient analysis to view XAI visualizations.</p>
+  <a href="/patient" class="btn btn-primary">📋 Go to Patient Input</a>
+</div>
+
+<div id="xaiContent" style="display:none;">
+  <!-- Tabs -->
+  <div id="xaiTabs">
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="tabRetinal">👁️ Retinal Grad-CAM</button>
+      <button class="tab-btn"        data-tab="tabTongue">👅 Tongue Grad-CAM</button>
+      <button class="tab-btn"        data-tab="tabSHAP">📊 SHAP Analysis</button>
+      <button class="tab-btn"        data-tab="tabECG">📈 ECG Attribution</button>
+    </div>
+
+    <!-- TAB: Retinal Grad-CAM -->
+    <div class="tab-panel active" id="tabRetinal">
+      <div class="img-compare" id="retinalCompare">
+        <div class="img-card">
+          <div class="img-card-header"><span>🖼️</span><span class="img-card-title">Original Retinal Image</span></div>
+          <img id="retOrigImg" src="" alt="Original"/>
+          <div style="padding:0.5rem 0.8rem;"><span class="img-card-sub" id="retDrLabel">—</span></div>
+        </div>
+        <div class="img-card">
+          <div class="img-card-header"><span>🔥</span><span class="img-card-title">Grad-CAM Heatmap</span></div>
+          <img id="retHeatImg" src="" alt="Heatmap" style="background:#111;"/>
+        </div>
+        <div class="img-card">
+          <div class="img-card-header"><span>🌡️</span><span class="img-card-title">Overlay</span></div>
+          <img id="retOverlayImg" src="" alt="Overlay"/>
+        </div>
+      </div>
+      <div class="alert alert-info" style="margin-top:1.2rem;">
+        <span class="alert-icon">💡</span>
+        <div>
+          <strong>Interpretation:</strong> Warm colors (red/yellow) show high model attention — typically the optic disc,
+          macula, and major vessel junctions, which are clinically linked to diabetic and hypertensive retinopathy.
+        </div>
+      </div>
+      <div style="text-align:center; margin-top:1rem;">
+        <button class="btn btn-outline btn-sm" id="btnLoadRetGradcam" onclick="loadRetinalGradCAM()">🔄 Generate Grad-CAM</button>
+      </div>
+    </div>
+
+    <!-- TAB: Tongue Grad-CAM -->
+    <div class="tab-panel" id="tabTongue">
+      <div class="img-compare" id="tongueCompare">
+        <div class="img-card">
+          <div class="img-card-header"><span>🖼️</span><span class="img-card-title">Original Tongue Image</span></div>
+          <img id="tngOrigImg" src="" alt="Original"/>
+          <div style="padding:0.5rem 0.8rem;"><span class="img-card-sub" id="tngClassLabel">—</span></div>
+        </div>
+        <div class="img-card">
+          <div class="img-card-header"><span>🔥</span><span class="img-card-title">Grad-CAM Heatmap</span></div>
+          <img id="tngHeatImg" src="" alt="Heatmap" style="background:#111;"/>
+        </div>
+        <div class="img-card">
+          <div class="img-card-header"><span>🌡️</span><span class="img-card-title">Overlay</span></div>
+          <img id="tngOverlayImg" src="" alt="Overlay"/>
+        </div>
+      </div>
+      <div class="alert alert-info" style="margin-top:1.2rem;">
+        <span class="alert-icon">💡</span>
+        <div>
+          <strong>Interpretation:</strong> Tongue Grad-CAM focuses on color distribution, coating patterns, and edge morphology
+          — areas linked to metabolic and cardiovascular risk in both TCM and modern diagnostics.
+        </div>
+      </div>
+      <div style="text-align:center; margin-top:1rem;">
+        <button class="btn btn-outline btn-sm" onclick="loadTongueGradCAM()">🔄 Generate Grad-CAM</button>
+      </div>
+    </div>
+
+    <!-- TAB: SHAP -->
+    <div class="tab-panel" id="tabSHAP">
+      <div id="shapContainer">
+        <div class="grid grid-2" style="margin-bottom:1.5rem;">
+          <div class="card">
+            <h3 style="font-size:1rem; font-weight:700; margin-bottom:1rem;">Cardiovascular Risk — SHAP Waterfall</h3>
+            <div id="shapPlotCV" style="text-align:center;"><p style="color:var(--text-muted);">Click "Generate SHAP" below</p></div>
+          </div>
+          <div class="card">
+            <h3 style="font-size:1rem; font-weight:700; margin-bottom:1rem;">Top Risk Factors</h3>
+            <div id="shapFactors"></div>
+          </div>
+        </div>
+        <div style="text-align:center;">
+          <button class="btn btn-outline btn-sm" onclick="loadSHAP()">🔄 Generate SHAP Analysis</button>
+        </div>
+      </div>
+      <div class="alert alert-info" style="margin-top:1.2rem;">
+        <span class="alert-icon">💡</span>
+        <div>
+          <strong>What is SHAP?</strong> SHAP assigns each clinical feature a contribution showing how much it pushed the
+          prediction <span style="color:#EF4444;">above</span> or <span style="color:#22C55E;">below</span> the baseline risk.
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: ECG -->
+    <div class="tab-panel" id="tabECG">
+      <div id="ecgContainer">
+        <div class="card" style="margin-bottom:1.5rem;">
+          <h3 style="font-size:1rem; font-weight:700; margin-bottom:1rem;" id="ecgRhythmTitle">ECG Attribution Analysis</h3>
+          <div id="ecgAttrPlot" style="text-align:center;"><p style="color:var(--text-muted);">Click "Generate ECG Plot" below</p></div>
+        </div>
+        <div class="card" style="margin-bottom:1.5rem;">
+          <h3 style="font-size:1rem; font-weight:700; margin-bottom:1rem;">12-Lead ECG</h3>
+          <div id="ecg12Plot" style="text-align:center;"><p style="color:var(--text-muted);">—</p></div>
+        </div>
+        <!-- ECG Metrics -->
+        <div class="grid grid-5" id="ecgMetrics"></div>
+        <div style="text-align:center; margin-top:1rem;">
+          <button class="btn btn-outline btn-sm" onclick="loadECGPlots()">🔄 Generate ECG Plots</button>
+        </div>
+      </div>
+      <div class="alert alert-info" style="margin-top:1.2rem;">
+        <span class="alert-icon">💡</span>
+        <div>
+          <strong>ECG Attribution:</strong> The amber trace shows which time segments most influenced the arrhythmia classification.
+          Peaks near QRS complexes indicate depolarization analysis; ST-segment focus suggests repolarization evaluation.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const data = getResults();
+  if (!data || !data.risk_scores) return;
+
+  document.getElementById('noData').style.display = 'none';
+  document.getElementById('xaiContent').style.display = 'block';
+  initTabs('xaiTabs');
+
+  // Pre-fill labels
+  if (data.retinal) document.getElementById('retDrLabel').textContent = 'DR Grade: ' + (data.retinal.dr_grade_label || 'N/A');
+  if (data.tongue) document.getElementById('tngClassLabel').textContent = 'Class: ' + (data.tongue.tongue_class || 'N/A');
+
+  if (data.ecg) {
+    document.getElementById('ecgRhythmTitle').textContent = `ECG — ${data.ecg.arrhythmia_class || 'Unknown'}`;
+    const metricsEl = document.getElementById('ecgMetrics');
+    const metrics = [
+      ['Heart Rate', (data.ecg.heart_rate||75).toFixed(0), 'bpm'],
+      ['HRV (SDNN)', (data.ecg.hrv_ms||35).toFixed(1), 'ms'],
+      ['PR Interval', (data.ecg.pr_interval||160).toFixed(0), 'ms'],
+      ['QRS Duration', (data.ecg.qrs_duration||90).toFixed(0), 'ms'],
+      ['QTc Interval', (data.ecg.qtc_interval||420).toFixed(0), 'ms'],
+    ];
+    metricsEl.innerHTML = metrics.map(([label, val, unit]) => `
+      <div class="stat-card">
+        <div class="stat-value" style="font-size:1.4rem;">${val}<span style="font-size:0.65rem; color:var(--text-dim);"> ${unit}</span></div>
+        <div class="stat-label">${label}</div>
+      </div>
+    `).join('');
+  }
+
+  // Show top factors
+  if (data.clinical && data.clinical.feature_importances) {
+    const imp = data.clinical.feature_importances;
+    const sorted = Object.entries(imp).sort((a,b) => Math.abs(b[1]) - Math.abs(a[1])).slice(0, 8);
+    const el = document.getElementById('shapFactors');
+    el.innerHTML = sorted.map(([k,v]) => {
+      const color = v > 0 ? '#EF4444' : '#22C55E';
+      const dir = v > 0 ? '↑ Increases risk' : '↓ Decreases risk';
+      return `
+        <div style="background:var(--bg-panel); border:1px solid var(--border); border-left:3px solid ${color};
+                    border-radius:8px; padding:0.7rem 0.9rem; margin-bottom:0.5rem;">
+          <div style="font-weight:600; font-size:0.85rem;">${k}</div>
+          <div style="color:${color}; font-size:0.75rem;">${dir} · Impact: ${Math.abs(v).toFixed(3)}</div>
+        </div>`;
+    }).join('');
+  }
+
+  // Auto-load GradCAM
+  loadRetinalGradCAM();
+});
+
+async function loadRetinalGradCAM() {
+  const data = getResults();
+  const risk = data.risk_scores.cardiovascular || 50;
+  try {
+    const res = await fetchGradCAM('retinal', risk / 100);
+    document.getElementById('retOrigImg').src    = 'data:image/png;base64,' + res.original_b64;
+    document.getElementById('retHeatImg').src    = 'data:image/png;base64,' + res.heatmap_b64;
+    document.getElementById('retOverlayImg').src = 'data:image/png;base64,' + res.overlay_b64;
+  } catch(e) { showToast('Failed to generate retinal Grad-CAM', 'error'); }
+}
+
+async function loadTongueGradCAM() {
+  const data = getResults();
+  const risk = data.risk_scores.metabolic || 40;
+  try {
+    const res = await fetchGradCAM('tongue', risk / 100);
+    document.getElementById('tngOrigImg').src    = 'data:image/png;base64,' + res.original_b64;
+    document.getElementById('tngHeatImg').src    = 'data:image/png;base64,' + res.heatmap_b64;
+    document.getElementById('tngOverlayImg').src = 'data:image/png;base64,' + res.overlay_b64;
+  } catch(e) { showToast('Failed to generate tongue Grad-CAM', 'error'); }
+}
+
+async function loadSHAP() {
+  const data = getResults();
+  if (!data.clinical || !data.clinical.feature_importances) {
+    showToast('No clinical data for SHAP', 'warning');
+    return;
+  }
+  try {
+    const clinical = JSON.parse(sessionStorage.getItem('vf_clinical') || '{}');
+    const res = await fetchSHAP(
+      data.clinical.feature_importances,
+      0.25,
+      data.clinical.cardiovascular_risk || 0.5,
+      clinical,
+    );
+    document.getElementById('shapPlotCV').innerHTML = `<img src="data:image/png;base64,${res.shap_plot}" style="width:100%; border-radius:8px;"/>`;
+  } catch(e) { showToast('Failed to generate SHAP plot', 'error'); }
+}
+
+async function loadECGPlots() {
+  const data = getResults();
+  if (!data.ecg) { showToast('No ECG data', 'warning'); return; }
+  try {
+    const res = await fetchECGPlot(data.ecg);
+    document.getElementById('ecgAttrPlot').innerHTML = `<img src="data:image/png;base64,${res.attribution_plot}" style="width:100%; border-radius:8px;"/>`;
+    document.getElementById('ecg12Plot').innerHTML   = `<img src="data:image/png;base64,${res.lead12_plot}" style="width:100%; border-radius:8px;"/>`;
+  } catch(e) { showToast('Failed to generate ECG plots', 'error'); }
+}
+</script>
+{% endblock %}

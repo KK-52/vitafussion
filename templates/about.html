@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+{% block title %}About · VitaFusion AI{% endblock %}
+{% block topbar_title %}ℹ️ About{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">ℹ️ About VitaFusion AI</h1>
+  <p class="page-sub">Architecture, datasets, methodology, and system overview</p>
+</div>
+
+<!-- Overview -->
+<div class="about-section">
+  <div class="card" style="padding:2rem;">
+    <h2 class="about-title">🧬 Project Overview</h2>
+    <p style="color:var(--text-muted); line-height:1.8;">
+      <strong style="color:var(--text);">VitaFusion AI</strong> is a multimodal healthcare intelligence platform
+      designed for early health-risk assessment using four distinct data modalities:
+      retinal (fundus) images, tongue images, ECG signals, and structured clinical data.
+      By integrating multiple health indicators through a cross-modal attention fusion architecture,
+      the system provides comprehensive risk predictions for cardiovascular disease, diabetes,
+      hypertension, arrhythmia, and metabolic syndrome.
+    </p>
+    <p style="color:var(--text-muted); line-height:1.8; margin-top:1rem;">
+      The platform incorporates <strong style="color:var(--text);">Explainable AI</strong> (Grad-CAM, SHAP, Integrated Gradients)
+      for model transparency, and <strong style="color:var(--text);">Large Language Model</strong> integration for generating
+      clinically meaningful, personalized health reports.
+    </p>
+  </div>
+</div>
+
+<!-- Architecture -->
+<div class="about-section">
+  <h2 class="about-title">🏗️ System Architecture</h2>
+  <div class="card" style="padding:1.5rem;">
+    <div class="pipeline" style="margin:1rem 0;">
+      <div class="pipeline-step"><span class="ps-icon">👁️</span><span class="ps-name">Retinal</span><span class="ps-sub">ResNet-50</span></div>
+      <span class="pipeline-arrow">↘</span>
+      <div class="pipeline-step" style="grid-row:span 2;">
+        <span class="ps-icon">🔀</span><span class="ps-name">Cross-Modal Attention Fusion</span><span class="ps-sub">Gated Network</span>
+      </div>
+      <span class="pipeline-arrow">→</span>
+      <div class="pipeline-step"><span class="ps-icon">🎯</span><span class="ps-name">Multi-Disease Prediction</span><span class="ps-sub">5 Heads</span></div>
+      <span class="pipeline-arrow">→</span>
+      <div class="pipeline-step"><span class="ps-icon">🔍</span><span class="ps-name">XAI</span><span class="ps-sub">Grad-CAM · SHAP</span></div>
+      <span class="pipeline-arrow">→</span>
+      <div class="pipeline-step"><span class="ps-icon">📋</span><span class="ps-name">LLM Report</span><span class="ps-sub">GPT-4o / Gemini</span></div>
+    </div>
+    <div class="pipeline">
+      <div class="pipeline-step"><span class="ps-icon">👅</span><span class="ps-name">Tongue</span><span class="ps-sub">EfficientNet-B0</span></div>
+      <span class="pipeline-arrow">↗</span>
+    </div>
+    <div class="pipeline">
+      <div class="pipeline-step"><span class="ps-icon">📈</span><span class="ps-name">ECG</span><span class="ps-sub">1D-CNN + BiLSTM</span></div>
+      <span class="pipeline-arrow">↗</span>
+    </div>
+    <div class="pipeline">
+      <div class="pipeline-step"><span class="ps-icon">🧾</span><span class="ps-name">Clinical</span><span class="ps-sub">3-Layer MLP</span></div>
+      <span class="pipeline-arrow">↗</span>
+    </div>
+  </div>
+</div>
+
+<!-- Model Details -->
+<div class="about-section">
+  <h2 class="about-title">🧠 Model Architecture Details</h2>
+  <div class="grid grid-2">
+    <div class="card">
+      <h3 style="font-size:0.95rem; font-weight:700; color:var(--primary); margin-bottom:0.8rem;">👁️ Retinal Encoder</h3>
+      <div class="mod-row"><span class="mod-key">Backbone</span><span class="mod-val">ResNet-50 (ImageNet V2)</span></div>
+      <div class="mod-row"><span class="mod-key">Output</span><span class="mod-val">512-dim embedding</span></div>
+      <div class="mod-row"><span class="mod-key">Tasks</span><span class="mod-val">DR Grading, Vessel Density, Macular Risk</span></div>
+      <div class="mod-row"><span class="mod-key">XAI</span><span class="mod-val">Grad-CAM (layer4)</span></div>
+      <div class="mod-row"><span class="mod-key">Reference</span><span class="mod-val" style="font-size:0.72rem;">He et al. (2016) "Deep Residual Learning"</span></div>
+    </div>
+    <div class="card">
+      <h3 style="font-size:0.95rem; font-weight:700; color:#7C3AED; margin-bottom:0.8rem;">👅 Tongue Encoder</h3>
+      <div class="mod-row"><span class="mod-key">Backbone</span><span class="mod-val">EfficientNet-B0 (ImageNet V1)</span></div>
+      <div class="mod-row"><span class="mod-key">Output</span><span class="mod-val">512-dim embedding</span></div>
+      <div class="mod-row"><span class="mod-key">Tasks</span><span class="mod-val">6-class tongue classification, Coating, Moisture</span></div>
+      <div class="mod-row"><span class="mod-key">XAI</span><span class="mod-val">Grad-CAM (last conv block)</span></div>
+      <div class="mod-row"><span class="mod-key">Reference</span><span class="mod-val" style="font-size:0.72rem;">Tan & Le (2019) "EfficientNet"</span></div>
+    </div>
+    <div class="card">
+      <h3 style="font-size:0.95rem; font-weight:700; color:#EF4444; margin-bottom:0.8rem;">📈 ECG Encoder</h3>
+      <div class="mod-row"><span class="mod-key">Architecture</span><span class="mod-val">Multi-Scale 1D-CNN + BiLSTM</span></div>
+      <div class="mod-row"><span class="mod-key">Output</span><span class="mod-val">256-dim embedding</span></div>
+      <div class="mod-row"><span class="mod-key">Tasks</span><span class="mod-val">8-class arrhythmia, HR, PR, QRS, QTc</span></div>
+      <div class="mod-row"><span class="mod-key">Attention</span><span class="mod-val">Temporal self-attention pooling</span></div>
+      <div class="mod-row"><span class="mod-key">Reference</span><span class="mod-val" style="font-size:0.72rem;">Hannun et al. (2019), Wagner et al. (2020)</span></div>
+    </div>
+    <div class="card">
+      <h3 style="font-size:0.95rem; font-weight:700; color:#22C55E; margin-bottom:0.8rem;">🧾 Clinical Encoder</h3>
+      <div class="mod-row"><span class="mod-key">Architecture</span><span class="mod-val">3-Layer MLP + Residual + LayerNorm</span></div>
+      <div class="mod-row"><span class="mod-key">Input</span><span class="mod-val">22 clinical features</span></div>
+      <div class="mod-row"><span class="mod-key">Output</span><span class="mod-val">256-dim embedding</span></div>
+      <div class="mod-row"><span class="mod-key">Risk Models</span><span class="mod-val">Framingham, ADA, JNC-inspired</span></div>
+      <div class="mod-row"><span class="mod-key">XAI</span><span class="mod-val">SHAP feature attribution</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- Datasets -->
+<div class="about-section">
+  <h2 class="about-title">📊 Reference Datasets</h2>
+  <div class="card" style="padding:1.5rem;">
+    <div style="display:flex; flex-wrap:wrap; gap:0.5rem;">
+      <span class="dataset-badge">📈 <strong>PTB-XL</strong> — 21,837 ECG recordings</span>
+      <span class="dataset-badge">📈 <strong>MIMIC-IV</strong> — Clinical + ECG</span>
+      <span class="dataset-badge">👁️ <strong>EyePACS</strong> — Diabetic Retinopathy</span>
+      <span class="dataset-badge">👁️ <strong>APTOS 2019</strong> — Blindness Detection</span>
+      <span class="dataset-badge">👅 <strong>HIT Tongue</strong> — Tongue Imaging</span>
+      <span class="dataset-badge">🧾 <strong>Framingham</strong> — Cardiovascular Risk</span>
+    </div>
+  </div>
+</div>
+
+<!-- Technology Stack -->
+<div class="about-section">
+  <h2 class="about-title">⚙️ Technology Stack</h2>
+  <div class="grid grid-4">
+    <div class="stat-card">
+      <div class="stat-value" style="font-size:1.5rem;">🐍</div>
+      <div class="stat-label">Python + Flask</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" style="font-size:1.5rem;">🔥</div>
+      <div class="stat-label">PyTorch</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" style="font-size:1.5rem;">📊</div>
+      <div class="stat-label">Plotly.js</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" style="font-size:1.5rem;">🤖</div>
+      <div class="stat-label">GPT-4o / Gemini</div>
+    </div>
+  </div>
+</div>
+
+<!-- Publication -->
+<div class="about-section">
+  <h2 class="about-title">📄 Publication</h2>
+  <div class="card" style="padding:1.5rem;">
+    <blockquote style="border-left:3px solid var(--primary); padding-left:1rem; margin:0;">
+      <p style="font-style:italic; color:var(--text); font-size:0.95rem; line-height:1.7;">
+        "Multimodal Health Risk Assessment Using Retinal Images, Tongue Images, ECG Signals,
+        and Clinical Data with Explainable AI and LLM-Based Clinical Interpretation"
+      </p>
+    </blockquote>
+    <div style="color:var(--text-muted); font-size:0.82rem; margin-top:0.8rem;">
+      Four-modality fusion · Explainable AI · LLM-generated medical reports · Interactive dashboard
+    </div>
+  </div>
+</div>
+
+<!-- Disclaimer -->
+<div class="alert alert-warning" style="margin-top:1rem;">
+  <span class="alert-icon">⚕️</span>
+  <div>
+    <strong>Research Prototype:</strong> VitaFusion AI is for educational and demonstration purposes only.
+    Not a certified medical device. Always consult qualified healthcare professionals.
+  </div>
+</div>
+{% endblock %}

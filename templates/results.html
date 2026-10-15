@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>VitaFusion AI — Your Results</title>
+  <link rel="stylesheet" href="/static/css/vitafusion-new.css"/>
+</head>
+<body class="results-page">
+
+<header class="results-header">
+  <div style="display:flex;align-items:center;gap:12px;">
+    <span style="font-size:20px;">🫀</span>
+    <span style="font-weight:800;font-size:17px;">VitaFusion<span style="color:var(--primary-light)"> AI</span></span>
+  </div>
+  <div style="display:flex;gap:12px;">
+    <a href="/analyze"><button class="btn-ghost" style="padding:8px 18px;font-size:14px;">New Analysis</button></a>
+    <a href="/dashboard"><button class="btn-ghost" style="padding:8px 18px;font-size:14px;">Dashboard</button></a>
+  </div>
+</header>
+
+<div class="results-body" id="resultsBody">
+  <!-- Loading state -->
+  <div id="loadingState" style="text-align:center;padding:100px 20px;">
+    <div style="font-size:48px;margin-bottom:20px;animation:spin 2s linear infinite;display:inline-block;">⏳</div>
+    <div style="font-size:20px;font-weight:600;">Loading results…</div>
+    <div style="font-size:14px;color:var(--text-muted);margin-top:8px;">Please wait</div>
+  </div>
+
+  <!-- No results -->
+  <div id="noResults" style="display:none;text-align:center;padding:100px 20px;">
+    <div style="font-size:56px;margin-bottom:20px;opacity:0.4;">🔍</div>
+    <div style="font-size:22px;font-weight:700;margin-bottom:10px;">No analysis results yet</div>
+    <div style="font-size:15px;color:var(--text-muted);margin-bottom:32px;">Run your first analysis to see your health report here.</div>
+    <a href="/analyze" class="cta-btn" style="display:inline-flex;font-size:16px;padding:16px 36px;">Start Analysis →</a>
+  </div>
+
+  <!-- Results -->
+  <div id="resultsContent" style="display:none;">
+
+    <!-- Category banner -->
+    <div class="category-banner" id="catBanner">
+      <div class="cat-badge" id="catBadge">
+        <span class="cat-icon" id="catIcon"></span>
+        <span class="cat-title" id="catTitle"></span>
+      </div>
+      <p class="cat-desc" id="catDesc"></p>
+    </div>
+
+    <!-- Risk scores -->
+    <h3 style="font-size:18px;font-weight:700;margin-bottom:20px;">Risk Score Breakdown</h3>
+    <div class="risk-grid" id="riskGrid"></div>
+
+    <!-- Findings -->
+    <h3 style="font-size:18px;font-weight:700;margin:40px 0 20px;">Modality Findings</h3>
+    <div class="findings-grid" id="findingsGrid"></div>
+
+    <!-- Actions -->
+    <div class="results-actions" id="resultsActions">
+      <a href="/dashboard" class="btn-dashboard">📊 View Dashboard</a>
+      <a href="/analyze"   class="btn-dashboard">🔄 New Analysis</a>
+    </div>
+
+  </div>
+</div>
+
+<!-- Immediate care modal -->
+<div class="login-modal-bg" id="urgentModal">
+  <div class="login-modal" style="text-align:center;max-width:420px;">
+    <div style="font-size:56px;margin-bottom:16px;">🚨</div>
+    <h3 style="font-size:22px;margin-bottom:12px;">Immediate Care Recommended</h3>
+    <p style="font-size:15px;color:var(--text-muted);margin-bottom:28px;line-height:1.6;">
+      Your risk level is <strong style="color:var(--immediate)">high</strong>. We strongly recommend seeing a doctor soon.<br/><br/>
+      Would you like us to book a hospital appointment near you?
+    </p>
+    <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+      <button class="btn-book" onclick="bookHospital()" style="font-size:15px;">🏥 Yes, Book Now</button>
+      <button class="btn-ghost" onclick="document.getElementById('urgentModal').classList.remove('open')" style="font-size:15px;padding:14px 28px;">Not now</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const RISK_LABELS = {
+    cardiovascular: 'Cardiovascular',
+    diabetes: 'Diabetes',
+    hypertension: 'Hypertension',
+    arrhythmia: 'Arrhythmia',
+    metabolic: 'Metabolic',
+  };
+
+  function riskColor(val) {
+    // val is 0-100 scale
+    if (val >= 70) return 'var(--immediate)';
+    if (val >= 40) return 'var(--medium)';
+    return 'var(--good)';
+  }
+
+  // val is already 0-100; just round and add %
+  function pct(val) { return Math.round(val) + '%'; }
+
+  async function loadResults() {
+    try {
+      const res  = await fetch('/api/results');
+      const body = await res.json();
+      document.getElementById('loadingState').style.display = 'none';
+
+      if (body.status === 'empty' || !body.data) {
+        document.getElementById('noResults').style.display = 'block';
+        return;
+      }
+
+      const data = body.data;
+      document.getElementById('resultsContent').style.display = 'block';
+
+      // ── Category badge ────────────────────────────────────────────────────
+      const cat   = data.health_category || 'Good';
+      const badge = document.getElementById('catBadge');
+      const icons = { Good: '🟢', Medium: '🟡', Immediate: '🔴' };
+      const descs = {
+        Good:      'Your health indicators look positive. Keep maintaining your healthy lifestyle!',
+        Medium:    'Some risk indicators are elevated. Consider consulting a doctor in the coming weeks.',
+        Immediate: 'Your risk level is high. Please seek medical attention as soon as possible.',
+      };
+      badge.className = 'cat-badge ' + cat.toLowerCase();
+      document.getElementById('catIcon').textContent  = icons[cat]  || '⚪';
+      document.getElementById('catTitle').textContent = cat;
+      document.getElementById('catDesc').textContent  = descs[cat]  || '';
+
+      // ── Risk grid ────────────────────────────────────────────────────────
+      const riskGrid  = document.getElementById('riskGrid');
+      // risk_scores keys are disease names (0-100 scale from fusion model)
+      const risks = data.risk_scores || {};
+
+      const allRisks = Object.keys(RISK_LABELS).map(k => ({
+        key: k,
+        label: RISK_LABELS[k],
+        val: risks[k] !== undefined ? risks[k] : 0,
+      }));
+
+      riskGrid.innerHTML = allRisks.map(r => `
+        <div class="risk-card">
+          <div class="risk-label">${r.label}</div>
+          <div class="risk-val" style="color:${riskColor(r.val)}">${pct(r.val)}</div>
+          <div class="risk-bar-track">
+            <div class="risk-bar-fill" style="width:${Math.min(r.val,100)}%;background:${riskColor(r.val)}"></div>
+          </div>
+        </div>
+      `).join('');
+
+      // ── Findings ──────────────────────────────────────────────────────────
+      const fg = document.getElementById('findingsGrid');
+      let findingsHTML = '';
+
+      if (data.retinal) {
+        const r = data.retinal;
+        findingsHTML += `
+          <div class="finding-card">
+            <div class="finding-header"><span class="finding-icon">👁️</span><span class="finding-title">Retinal Analysis</span></div>
+            <div class="finding-item"><span class="finding-item-label">DR Grade</span><span class="finding-item-val">${r.dr_grade_label || 'N/A'}</span></div>
+            <div class="finding-item"><span class="finding-item-label">Vessel Score</span><span class="finding-item-val">${pct(r.vessel_score)}</span></div>
+            <div class="finding-item"><span class="finding-item-label">Optic Score</span><span class="finding-item-val">${pct(r.optic_score)}</span></div>
+            <div class="finding-item"><span class="finding-item-label">Macula Score</span><span class="finding-item-val">${pct(r.macula_score)}</span></div>
+          </div>`;
+      }
+      if (data.tongue) {
+        const t = data.tongue;
+        findingsHTML += `
+          <div class="finding-card">
+            <div class="finding-header"><span class="finding-icon">👅</span><span class="finding-title">Tongue Analysis</span></div>
+            <div class="finding-item"><span class="finding-item-label">Tongue Class</span><span class="finding-item-val">${t.tongue_class || 'N/A'}</span></div>
+            <div class="finding-item"><span class="finding-item-label">Coating Score</span><span class="finding-item-val">${pct(t.coating_score)}</span></div>
+            <div class="finding-item"><span class="finding-item-label">Moisture Score</span><span class="finding-item-val">${pct(t.moisture_score)}</span></div>
+          </div>`;
+      }
+      if (data.ecg) {
+        const e = data.ecg;
+        // Detect if it came from ECG image classifier
+        const isImageECG = e.ecg_image_class !== undefined;
+        const ecgProbs6 = e.ecg_image_probs || [];
+        const class6Names  = ['Normal','Myocardial Infarction','Supraventricular','Ventricular PVC','Fusion Beat','Unknown'];
+        const class6Colors = ['var(--good)','var(--immediate)','var(--medium)','var(--medium)','var(--medium)','var(--text-muted)'];
+
+        if (isImageECG) {
+          const probBars = ecgProbs6.map((p, i) => `
+            <div class="finding-item">
+              <span class="finding-item-label" style="color:${class6Colors[i]}">${class6Names[i]}</span>
+              <span class="finding-item-val">${Math.round(p*100)}%</span>
+            </div>`).join('');
+          findingsHTML += `
+            <div class="finding-card">
+              <div class="finding-header"><span class="finding-icon">📈</span><span class="finding-title">ECG Image Analysis</span></div>
+              <div style="font-size:11px;color:var(--primary-light);margin-bottom:10px;font-weight:600;">
+                📸 Powered by EfficientNet-B0 · erhmrai/ecg-image-data
+              </div>
+              <div class="finding-item">
+                <span class="finding-item-label">Detected Pattern</span>
+                <span class="finding-item-val">${e.ecg_image_class}</span>
+              </div>
+              <div class="finding-item">
+                <span class="finding-item-label">Rhythm (mapped)</span>
+                <span class="finding-item-val">${e.arrhythmia_class || 'N/A'}</span>
+              </div>
+              <div class="finding-item">
+                <span class="finding-item-label">Heart Rate (est.)</span>
+                <span class="finding-item-val">${Math.round(e.heart_rate)} bpm</span>
+              </div>
+              <div style="margin-top:10px;font-size:11px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:0.05em;">4-Class Probabilities</div>
+              ${probBars}
+            </div>`;
+        } else {
+          findingsHTML += `
+            <div class="finding-card">
+              <div class="finding-header"><span class="finding-icon">📈</span><span class="finding-title">ECG Analysis</span></div>
+              <div class="finding-item"><span class="finding-item-label">Rhythm</span><span class="finding-item-val">${e.arrhythmia_class || 'N/A'}</span></div>
+              <div class="finding-item"><span class="finding-item-label">Heart Rate</span><span class="finding-item-val">${Math.round(e.heart_rate)} bpm</span></div>
+              <div class="finding-item"><span class="finding-item-label">HRV</span><span class="finding-item-val">${Math.round(e.hrv_ms)} ms</span></div>
+              <div class="finding-item"><span class="finding-item-label">QTc</span><span class="finding-item-val">${Math.round(e.qtc_interval)} ms</span></div>
+            </div>`;
+        }
+
+      } else {
+        findingsHTML += `
+          <div class="finding-card" style="opacity:0.5;">
+            <div class="finding-header"><span class="finding-icon">📈</span><span class="finding-title">ECG Analysis</span></div>
+            <div style="font-size:13px;color:var(--text-muted);padding:8px 0;">No ECG file uploaded — upload a CSV on the analysis page to see cardiac findings.</div>
+          </div>`;
+      }
+
+      fg.innerHTML = findingsHTML || '<p style="color:var(--text-muted)">No modality data available.</p>';
+
+      // ── Immediate modal ───────────────────────────────────────────────────
+      if (cat === 'Immediate') {
+        document.getElementById('resultsActions').innerHTML += `
+          <button class="btn-book" onclick="document.getElementById('urgentModal').classList.add('open')">
+            🏥 Book Hospital Now
+          </button>`;
+        setTimeout(() => document.getElementById('urgentModal').classList.add('open'), 1800);
+      }
+
+    } catch(err) {
+      document.getElementById('loadingState').style.display = 'none';
+      document.getElementById('noResults').style.display = 'block';
+      console.error(err);
+    }
+  }
+
+  function bookHospital() {
+    document.getElementById('urgentModal').classList.remove('open');
+    window.location.href = '/booking';
+  }
+
+  window.addEventListener('DOMContentLoaded', loadResults);
+</script>
+</body>
+</html>

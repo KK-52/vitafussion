@@ -1,0 +1,52 @@
+{
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 2.081423906179575,
+      "val_loss": 2.4819748839107127,
+      "train_acc": 0.038461538461538464,
+      "val_acc": 0.009174311926605505,
+      "val_auroc": 0.5054166666666666,
+      "val_f1": 0.0022727272497933887
+    },
+    {
+      "epoch": 2,
+      "train_loss": 1.988770448244535,
+      "val_loss": 2.2647144542921573,
+      "train_acc": 0.04567307692307692,
+      "val_acc": 0.009174311926605505,
+      "val_auroc": 0.5117608953546453,
+      "val_f1": 0.0022727272497933887
+    }
+  ],
+  "test_metrics": {
+    "accuracy": 0.02451202905129369,
+    "macro_f1": 0.005981391168857034,
+    "auroc": 0.49828592131764193,
+    "per_class_f1": {
+      "Normal Sinus Rhythm": 0.0,
+      "Atrial Fibrillation": 0.0,
+      "ST-Elevation (STEMI)": 0.0,
+      "Left Bundle Branch Block": 0.0,
+      "Right Bundle Branch Block": 0.0,
+      "Premature Ventricular Contraction": 0.0,
+      "Sinus Tachycardia": 0.0,
+      "Sinus Bradycardia": 0.047851129350856274
+    },
+    "loss": 2.1734162878026977
+  },
+  "args": {
+    "ptbxl_dir": "E:/ecg/ptb-xl-a-large-publicly-available-electrocardiography-dataset-1.0.1",
+    "sampling_rate": 100,
+    "epochs": 2,
+    "batch_size": 64,
+    "lr": 0.001,
+    "weight_decay": 0.0001,
+    "num_workers": 0,
+    "label_mode": "arrhythmia",
+    "save_dir": "models/pretrained",
+    "resume": null,
+    "quick": true,
+    "no_cuda": false
+  }
+}

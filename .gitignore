@@ -1,0 +1,13 @@
+.env
+.env_1
+__pycache__/
+*.pyc
+
+# Pretrained model weights (exceeds GitHub 100MB limit)
+models/pretrained/*.pt
+models/pretrained/*.pth
+*.pt
+*.pth
+
+# Local databases and caches
+data/chroma_db/

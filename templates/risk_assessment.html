@@ -1,0 +1,264 @@
+{% extends "base.html" %}
+{% block title %}Risk Assessment · VitaFusion AI{% endblock %}
+{% block topbar_title %}📊 Risk Assessment{% endblock %}
+
+{% block content %}
+<div class="page-header" id="riskHeader">
+  <h1 class="page-title">📊 Risk Assessment</h1>
+  <p class="page-sub">Multimodal disease risk scores with confidence levels</p>
+</div>
+
+<!-- No data message -->
+<div id="noData" class="card" style="text-align:center; padding:4rem 2rem;">
+  <div style="font-size:4rem; margin-bottom:1rem;">📊</div>
+  <h2 style="font-weight:700; margin-bottom:0.5rem;">No Analysis Yet</h2>
+  <p style="color:var(--text-muted); margin-bottom:1.5rem;">Please complete patient data input and run analysis first.</p>
+  <a href="/patient" class="btn btn-primary">📋 Go to Patient Input</a>
+</div>
+
+<!-- Results (hidden initially) -->
+<div id="riskContent" style="display:none;">
+
+  <!-- Overall + Patient Bar -->
+  <div style="display:flex; gap:1.5rem; align-items:stretch; margin-bottom:2rem; flex-wrap:wrap;">
+    <div style="flex:1;">
+      <div class="card" style="padding:1.2rem; display:flex; align-items:center; gap:1rem; height:100%;">
+        <div style="font-size:2rem;">🧬</div>
+        <div>
+          <div style="font-size:0.78rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.8px;">Patient</div>
+          <div style="font-weight:700; font-size:1.1rem;" id="patientName">—</div>
+          <div style="color:var(--text-muted); font-size:0.82rem;" id="patientMeta">—</div>
+        </div>
+      </div>
+    </div>
+    <div style="width:180px;">
+      <div class="card" id="overallCard" style="text-align:center; padding:1.2rem; height:100%;">
+        <div style="font-size:0.72rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px;">Overall Risk</div>
+        <div id="overallScore" style="font-size:2.8rem; font-weight:800; line-height:1.1; margin:0.3rem 0;">—</div>
+        <div id="overallLabel" class="risk-level-badge level-low">—</div>
+      </div>
+    </div>
+    <div style="width:140px;">
+      <div class="card" style="text-align:center; padding:1.2rem; height:100%;">
+        <div style="font-size:0.72rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px;">Modalities</div>
+        <div id="modalityCount" style="font-size:2.8rem; font-weight:800; color:var(--primary); line-height:1.1; margin:0.3rem 0;">—</div>
+        <div style="font-size:0.75rem; color:var(--text-muted);">Analyzed</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Disease Gauges -->
+  <h2 style="font-size:1.2rem; font-weight:700; margin-bottom:1rem;">🎯 Disease Risk Scores</h2>
+  <div class="grid grid-5" id="riskGauges" style="margin-bottom:2.5rem;"></div>
+
+  <!-- Charts Row -->
+  <div class="grid grid-2" style="margin-bottom:2.5rem;">
+    <div class="card">
+      <h3 style="font-size:1rem; font-weight:700; margin-bottom:1rem;">🕸️ Modality Contribution</h3>
+      <div id="radarChart" style="width:100%; height:320px;"></div>
+    </div>
+    <div class="card">
+      <h3 style="font-size:1rem; font-weight:700; margin-bottom:1rem;">📈 Risk Score Comparison</h3>
+      <div id="barChart" style="width:100%; height:320px;"></div>
+    </div>
+  </div>
+
+  <!-- Per-Modality Findings -->
+  <h2 style="font-size:1.2rem; font-weight:700; margin-bottom:1rem;">🔬 Per-Modality Findings</h2>
+  <div class="grid grid-4" id="modalityFindings" style="margin-bottom:2rem;"></div>
+
+  <!-- Alerts -->
+  <div id="riskAlerts"></div>
+</div>
+
+<script>
+async function initRiskPage() {
+  let data = getResults();
+  // Fallback: fetch from server cache if sessionStorage is empty
+  if (!data || !data.risk_scores) {
+    try {
+      const res = await fetch('/api/results');
+      const json = await res.json();
+      if (json.status === 'ok' && json.data) {
+        VF.results = json.data;
+        sessionStorage.setItem('vf_results', JSON.stringify(json.data));
+        data = json.data;
+      }
+    } catch(e) {}
+  }
+  if (!data || !data.risk_scores) return;
+
+  document.getElementById('noData').style.display = 'none';
+  document.getElementById('riskContent').style.display = 'block';
+  updateAnalysisBadge(true);
+
+  const scores = data.risk_scores;
+  const confs  = data.confidence_scores || {};
+  const patient = data.patient_info || JSON.parse(sessionStorage.getItem('vf_patient') || '{}');
+
+  // Patient info
+  document.getElementById('patientName').textContent = patient.name || 'Anonymous';
+  document.getElementById('patientMeta').textContent = `${patient.age || '?'}y · ${patient.gender || '?'} · ${data.n_modalities || 0} modalities`;
+
+  // Overall score
+  const vals = Object.values(scores);
+  const overall = vals.reduce((a,b) => a+b, 0) / vals.length;
+  const oColor = riskColor(overall);
+  const oLevel = riskLevel(overall);
+  document.getElementById('overallScore').textContent = Math.round(overall) + '%';
+  document.getElementById('overallScore').style.color = oColor;
+  document.getElementById('overallLabel').textContent = oLevel.label;
+  document.getElementById('overallLabel').className = 'risk-level-badge ' + oLevel.cls;
+  document.getElementById('overallCard').style.borderColor = oColor + '44';
+  document.getElementById('modalityCount').textContent = data.n_modalities || 0;
+
+  // Disease gauges
+  const icons = {cardiovascular:'🫀',diabetes:'🩸',hypertension:'💊',arrhythmia:'📊',metabolic:'⚗️'};
+  const colors = {cardiovascular:'#EF4444',diabetes:'#F59E0B',hypertension:'#8B5CF6',arrhythmia:'#00D4FF',metabolic:'#10B981'};
+  const gaugesEl = document.getElementById('riskGauges');
+  gaugesEl.innerHTML = '';
+
+  Object.entries(scores).forEach(([disease, score]) => {
+    const color = colors[disease] || riskColor(score);
+    const lv = riskLevel(score);
+    const conf = confs[disease] || 0.75;
+    const div = document.createElement('div');
+    div.className = 'risk-card animate-fadeup';
+    div.style.setProperty('--card-color', color);
+    div.innerHTML = `
+      <div style="font-size:1.5rem; margin-bottom:0.3rem;">${icons[disease]||'🔵'}</div>
+      <div class="risk-gauge-wrap">${buildGaugeSVG(score, color)}</div>
+      <div class="risk-disease" style="color:${color};">${formatDiseaseName(disease)}</div>
+      <span class="risk-level-badge ${lv.cls}">${lv.label}</span>
+      <div class="risk-conf">Confidence: ${Math.round(conf*100)}%</div>
+    `;
+    gaugesEl.appendChild(div);
+  });
+
+  // Bar chart (Plotly)
+  const diseaseNames = Object.keys(scores).map(formatDiseaseName);
+  const scoreVals    = Object.values(scores);
+  const barColors    = Object.keys(scores).map(d => colors[d] || '#00D4FF');
+
+  Plotly.newPlot('barChart', [{
+    x: diseaseNames, y: scoreVals, type: 'bar',
+    marker: { color: barColors, opacity: 0.85, line: { color: barColors, width: 1 } },
+    text: scoreVals.map(v => v.toFixed(1) + '%'), textposition: 'outside',
+    textfont: { color: '#E2E8F0', size: 12 },
+  }], {
+    paper_bgcolor: '#0F1629', plot_bgcolor: '#0F1629',
+    xaxis: { tickfont: { color: '#9CA3AF' }, gridcolor: '#1F2937' },
+    yaxis: { range: [0, 115], tickfont: { color: '#4B5563' }, gridcolor: '#1F2937',
+             title: { text: 'Risk Score (%)', font: { color: '#6B7280' } } },
+    margin: { l: 50, r: 20, t: 15, b: 50 },
+    shapes: [
+      { type:'line', x0:-0.5, x1:4.5, y0:30, y1:30, line:{color:'#22C55E44', dash:'dot'} },
+      { type:'line', x0:-0.5, x1:4.5, y0:60, y1:60, line:{color:'#F59E0B44', dash:'dot'} },
+      { type:'line', x0:-0.5, x1:4.5, y0:80, y1:80, line:{color:'#EF444444', dash:'dot'} },
+    ],
+  }, { displayModeBar: false, responsive: true });
+
+  // Radar chart
+  const modLabels = ['👁️ Retinal', '👅 Tongue', '📈 ECG', '🧾 Clinical'];
+  const modVals   = [
+    data.retinal ? 0.85 : 0, data.tongue ? 0.7 : 0,
+    data.ecg     ? 0.9  : 0, data.clinical ? 0.8 : 0,
+  ];
+  Plotly.newPlot('radarChart', [{
+    type: 'scatterpolar',
+    r: [...modVals, modVals[0]], theta: [...modLabels, modLabels[0]],
+    fill: 'toself', fillcolor: 'rgba(0,212,255,0.1)',
+    line: { color: '#00D4FF', width: 2 },
+    marker: { size: 7, color: '#00D4FF' },
+  }], {
+    polar: {
+      radialaxis: { visible: true, range: [0, 1], tickfont: { color: '#4B5563' },
+                    gridcolor: '#1F2937', linecolor: '#1F2937' },
+      angularaxis: { tickfont: { color: '#9CA3AF', size: 11 }, gridcolor: '#1F2937' },
+      bgcolor: '#0F1629',
+    },
+    paper_bgcolor: '#0F1629',
+    margin: { l: 50, r: 50, t: 30, b: 30 },
+    showlegend: false,
+  }, { displayModeBar: false, responsive: true });
+
+  // Modality findings cards
+  const findingsEl = document.getElementById('modalityFindings');
+  findingsEl.innerHTML = '';
+
+  // Retinal
+  const ret = data.retinal;
+  findingsEl.innerHTML += `
+    <div class="modality-card" style="--mod-color:#00D4FF;">
+      <div class="mod-icon">👁️</div>
+      <div class="mod-title">Retinal Analysis</div>
+      ${ret ? `
+        <div class="mod-row"><span class="mod-key">DR Grade</span><span class="mod-val">${ret.dr_grade_label||'N/A'}</span></div>
+        <div class="mod-row"><span class="mod-key">Vessel Score</span><span class="mod-val">${(ret.vessel_score||0).toFixed(2)}</span></div>
+        <div class="mod-row"><span class="mod-key">Macular Risk</span><span class="mod-val" style="color:#EF4444;">${((ret.macula_score||0)*100).toFixed(0)}%</span></div>
+      ` : '<div class="mod-missing">No retinal data</div>'}
+    </div>
+  `;
+  // Tongue
+  const tng = data.tongue;
+  findingsEl.innerHTML += `
+    <div class="modality-card" style="--mod-color:#7C3AED;">
+      <div class="mod-icon">👅</div>
+      <div class="mod-title">Tongue Analysis</div>
+      ${tng ? `
+        <div class="mod-row"><span class="mod-key">Class</span><span class="mod-val">${tng.tongue_class||'N/A'}</span></div>
+        <div class="mod-row"><span class="mod-key">Coating</span><span class="mod-val">${(tng.coating_score||0).toFixed(2)}</span></div>
+        <div class="mod-row"><span class="mod-key">Moisture</span><span class="mod-val" style="color:#22C55E;">${(tng.moisture_score||0).toFixed(2)}</span></div>
+      ` : '<div class="mod-missing">No tongue data</div>'}
+    </div>
+  `;
+  // ECG
+  const ecg = data.ecg;
+  findingsEl.innerHTML += `
+    <div class="modality-card" style="--mod-color:#EF4444;">
+      <div class="mod-icon">📈</div>
+      <div class="mod-title">ECG Analysis</div>
+      ${ecg ? `
+        <div class="mod-row"><span class="mod-key">Rhythm</span><span class="mod-val" style="color:${ecg.arrhythmia_class!=='Normal Sinus Rhythm'?'#EF4444':'#22C55E'}; font-size:0.72rem;">${ecg.arrhythmia_class||'N/A'}</span></div>
+        <div class="mod-row"><span class="mod-key">Heart Rate</span><span class="mod-val">${(ecg.heart_rate||75).toFixed(0)} bpm</span></div>
+        <div class="mod-row"><span class="mod-key">HRV</span><span class="mod-val">${(ecg.hrv_ms||35).toFixed(1)} ms</span></div>
+      ` : '<div class="mod-missing">No ECG data</div>'}
+    </div>
+  `;
+  // Clinical
+  const cli = data.clinical;
+  findingsEl.innerHTML += `
+    <div class="modality-card" style="--mod-color:#22C55E;">
+      <div class="mod-icon">🧾</div>
+      <div class="mod-title">Clinical Data</div>
+      ${cli ? `
+        <div class="mod-row"><span class="mod-key">BMI Class</span><span class="mod-val">${(cli.derived||{}).bmi_class||'N/A'}</span></div>
+        <div class="mod-row"><span class="mod-key">BP Class</span><span class="mod-val">${(cli.derived||{}).bp_class||'N/A'}</span></div>
+        <div class="mod-row"><span class="mod-key">Glucose</span><span class="mod-val">${(cli.derived||{}).glucose_class||'N/A'}</span></div>
+      ` : '<div class="mod-missing">No clinical data</div>'}
+    </div>
+  `;
+
+  // Risk alerts
+  const alerts = document.getElementById('riskAlerts');
+  const highRisks = Object.entries(scores).filter(([,v]) => v >= 60).sort((a,b) => b[1]-a[1]);
+  if (highRisks.length > 0) {
+    alerts.innerHTML = '<h2 style="font-size:1.2rem; font-weight:700; margin:1.5rem 0 1rem;">⚠️ Risk Alerts</h2>';
+    highRisks.forEach(([disease, score]) => {
+      const lv = score >= 80 ? 'CRITICAL' : 'HIGH';
+      const color = score >= 80 ? '#7C3AED' : '#EF4444';
+      alerts.innerHTML += `
+        <div class="alert alert-danger" style="border-left-color:${color};">
+          <span class="alert-icon">${icons[disease]||'🔴'}</span>
+          <div>
+            <strong style="color:${color};">${lv} ${formatDiseaseName(disease)} Risk — ${score.toFixed(0)}%</strong>
+            <div style="font-size:0.82rem; margin-top:2px;">Medical consultation recommended. See Health Report for details.</div>
+          </div>
+        </div>
+      `;
+    });
+  }
+}
+document.addEventListener('DOMContentLoaded', initRiskPage);
+</script>
+{% endblock %}

@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>VitaFusion AI — Register</title>
+  <meta name="description" content="Create your VitaFusion AI health profile to get started with AI-powered health analysis."/>
+  <link rel="stylesheet" href="/static/css/vitafusion-new.css"/>
+</head>
+<body class="reg-page">
+
+<div class="reg-card">
+  <div class="reg-logo">
+    <div class="reg-logo-icon">🫀</div>
+    <div class="reg-logo-text">Vita<span>Fusion</span> AI</div>
+  </div>
+  <h1 class="reg-title">Create your profile</h1>
+  <p class="reg-subtitle">Your AI-powered personal health companion</p>
+
+  <div class="reg-error" id="regError"></div>
+
+  <form id="registerForm">
+    <div class="form-group">
+      <label for="regName">Full Name</label>
+      <input id="regName" name="name" type="text" placeholder="e.g. Priya Ramesh" required autocomplete="name"/>
+    </div>
+    <div class="form-group">
+      <label for="regPhone">Phone Number</label>
+      <input id="regPhone" name="phone" type="tel" placeholder="10-digit mobile number" required autocomplete="tel" maxlength="15"/>
+    </div>
+    <div class="form-group">
+      <label for="regCity">City</label>
+      <select id="regCity" name="city" required>
+        <option value="" disabled selected>Select your city</option>
+        {% for c in cities %}
+        <option value="{{ c }}">{{ c | capitalize }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="regAddress">Address / Location <span style="color:var(--text-dim);font-weight:400;">(optional)</span></label>
+      <input id="regAddress" name="address" type="text" placeholder="Street, area, landmark…" autocomplete="street-address"/>
+    </div>
+    <button class="btn-primary" type="submit" id="regBtn">Get Started →</button>
+  </form>
+
+  <p class="reg-alt">Already registered? <a href="#" onclick="openLogin(event)">Sign in with phone</a></p>
+</div>
+
+<!-- Login modal -->
+<div class="login-modal-bg" id="loginModal">
+  <div class="login-modal">
+    <h3>👋 Welcome back</h3>
+    <div class="reg-error" id="loginError"></div>
+    <form id="loginForm">
+      <div class="form-group">
+        <label for="loginPhone">Registered Phone Number</label>
+        <input id="loginPhone" name="phone" type="tel" placeholder="Your 10-digit number" required/>
+      </div>
+      <button class="btn-primary" type="submit" id="loginBtn">Sign In →</button>
+    </form>
+    <p class="reg-alt" style="margin-top:16px;">
+      <a href="#" onclick="closeLogin(event)">← Back to Register</a>
+    </p>
+  </div>
+</div>
+
+<script>
+  const regError   = document.getElementById('regError');
+  const loginError = document.getElementById('loginError');
+
+  function showError(el, msg) { el.textContent = msg; el.style.display = 'block'; }
+  function hideError(el)      { el.style.display = 'none'; }
+
+  function openLogin(e)  { e.preventDefault(); document.getElementById('loginModal').classList.add('open'); }
+  function closeLogin(e) { e.preventDefault(); document.getElementById('loginModal').classList.remove('open'); }
+  document.getElementById('loginModal').addEventListener('click', function(e) {
+    if (e.target === this) closeLogin(e);
+  });
+
+  // Register
+  document.getElementById('registerForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    hideError(regError);
+    const btn = document.getElementById('regBtn');
+    btn.disabled = true; btn.textContent = 'Setting up…';
+    const fd = new FormData(this);
+    try {
+      const res = await fetch('/api/register', {method:'POST', body: fd});
+      const data = await res.json();
+      if (data.status === 'ok') {
+        window.location.href = data.redirect || '/home';
+      } else {
+        showError(regError, data.message || 'Registration failed. Please try again.');
+        btn.disabled = false; btn.textContent = 'Get Started →';
+      }
+    } catch(err) {
+      showError(regError, 'Network error. Please try again.');
+      btn.disabled = false; btn.textContent = 'Get Started →';
+    }
+  });
+
+  // Login
+  document.getElementById('loginForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    hideError(loginError);
+    const btn = document.getElementById('loginBtn');
+    btn.disabled = true; btn.textContent = 'Signing in…';
+    const fd = new FormData(this);
+    try {
+      const res = await fetch('/api/login', {method:'POST', body: fd});
+      const data = await res.json();
+      if (data.status === 'ok') {
+        window.location.href = data.redirect || '/home';
+      } else {
+        showError(loginError, data.message || 'Phone number not found. Please register.');
+        btn.disabled = false; btn.textContent = 'Sign In →';
+      }
+    } catch(err) {
+      showError(loginError, 'Network error. Please try again.');
+      btn.disabled = false; btn.textContent = 'Sign In →';
+    }
+  });
+</script>
+</body>
+</html>

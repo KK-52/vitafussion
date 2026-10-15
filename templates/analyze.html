@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>VitaFusion AI — Analysis</title>
+  <link rel="stylesheet" href="/static/css/vitafusion-new.css"/>
+</head>
+<body class="analyze-page">
+
+<!-- Header / Step indicator -->
+<header class="analyze-header">
+  <a href="/home"><button class="back-btn">← Home</button></a>
+  <div class="wizard-steps">
+    <div class="step-item active" id="s1"><div class="step-num">1</div><span>Eye Image</span></div>
+    <div class="step-divider"></div>
+    <div class="step-item" id="s2"><div class="step-num">2</div><span>Tongue Image</span></div>
+    <div class="step-divider"></div>
+    <div class="step-item" id="s3"><div class="step-num">3</div><span>ECG File</span></div>
+  </div>
+</header>
+
+<!-- Wizard body -->
+<div class="wizard-body">
+
+  <!-- Step 1: Retinal / Eye -->
+  <div class="wizard-panel active" id="panel1">
+    <h2 class="wizard-title">👁️ Upload Eye Image</h2>
+    <p class="wizard-subtitle">A clear, well-lit close-up of your eye (fundus/retinal photo). PNG or JPG accepted.</p>
+    <div class="drop-zone" id="dropZone1">
+      <input type="file" id="retinalFile" accept="image/*" onchange="handleFile(1, this)"/>
+      <div class="drop-icon">👁️</div>
+      <div class="drop-label">Drag & drop your eye image</div>
+      <div class="drop-hint">or click to browse · PNG, JPG up to 20 MB</div>
+    </div>
+    <div class="preview-box" id="preview1" style="display:none">
+      <img class="preview-img" id="previewImg1" src="" alt="Preview"/>
+      <div class="preview-info">
+        <div class="preview-name" id="previewName1"></div>
+        <div class="preview-size" id="previewSize1"></div>
+      </div>
+      <button class="preview-remove" onclick="removeFile(1)">✕ Remove</button>
+    </div>
+    <div class="wizard-nav">
+      <button class="btn-ghost" onclick="skipStep(1)">Skip this step</button>
+      <button class="btn-next" onclick="goStep(2)">Next →</button>
+    </div>
+  </div>
+
+  <!-- Step 2: Tongue -->
+  <div class="wizard-panel" id="panel2">
+    <h2 class="wizard-title">👅 Upload Tongue Image</h2>
+    <p class="wizard-subtitle">Photograph your tongue under natural light with mouth open wide. PNG or JPG accepted.</p>
+    <div class="drop-zone" id="dropZone2">
+      <input type="file" id="tongueFile" accept="image/*" onchange="handleFile(2, this)"/>
+      <div class="drop-icon">👅</div>
+      <div class="drop-label">Drag & drop your tongue image</div>
+      <div class="drop-hint">or click to browse · PNG, JPG up to 20 MB</div>
+    </div>
+    <div class="preview-box" id="preview2" style="display:none">
+      <img class="preview-img" id="previewImg2" src="" alt="Preview"/>
+      <div class="preview-info">
+        <div class="preview-name" id="previewName2"></div>
+        <div class="preview-size" id="previewSize2"></div>
+      </div>
+      <button class="preview-remove" onclick="removeFile(2)">✕ Remove</button>
+    </div>
+    <div class="wizard-nav">
+      <button class="btn-ghost" onclick="goStep(1)">← Back</button>
+      <div style="display:flex;gap:12px;">
+        <button class="btn-ghost" onclick="skipStep(2)">Skip</button>
+        <button class="btn-next" onclick="goStep(3)">Next →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 3: ECG — CSV or Image -->
+  <div class="wizard-panel" id="panel3">
+    <h2 class="wizard-title">📈 Upload ECG <span style="font-size:16px;color:var(--text-muted);font-weight:400;">(optional)</span></h2>
+    <p class="wizard-subtitle">Upload either an ECG CSV file <strong>or</strong> a photo of your ECG paper printout.</p>
+
+    <!-- Mode tabs -->
+    <div style="display:flex;gap:0;margin-bottom:24px;border:1px solid var(--border);border-radius:10px;overflow:hidden;">
+      <button class="ecg-tab active" id="tabCsv"   onclick="setEcgMode('csv')"   style="flex:1;padding:12px;background:var(--primary);color:#fff;border:none;font-family:var(--font);font-size:14px;font-weight:600;cursor:pointer;transition:all 0.2s;">
+        📄 CSV Signal File
+      </button>
+      <button class="ecg-tab"        id="tabImage" onclick="setEcgMode('image')" style="flex:1;padding:12px;background:var(--surface);color:var(--text-muted);border:none;font-family:var(--font);font-size:14px;font-weight:600;cursor:pointer;transition:all 0.2s;">
+        🖼️ ECG Paper Photo
+      </button>
+    </div>
+
+    <!-- CSV mode -->
+    <div id="ecgCsvMode">
+      <div class="drop-zone" id="dropZone3csv">
+        <input type="file" id="ecgFile" accept=".csv,.txt" onchange="handleFile(3, this, 'csv')"/>
+        <div class="drop-icon">📄</div>
+        <div class="drop-label">Drag & drop your ECG CSV file</div>
+        <div class="drop-hint">Exported from ECG device · CSV format</div>
+      </div>
+      <div class="preview-box" id="preview3csv" style="display:none">
+        <div style="font-size:32px">📄</div>
+        <div class="preview-info">
+          <div class="preview-name" id="previewName3csv"></div>
+          <div class="preview-size" id="previewSize3csv"></div>
+        </div>
+        <button class="preview-remove" onclick="removeFile(3,'csv')">✕ Remove</button>
+      </div>
+    </div>
+
+    <!-- Image mode -->
+    <div id="ecgImageMode" style="display:none">
+      <div style="background:rgba(124,58,237,0.06);border:1px solid rgba(124,58,237,0.2);border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:13px;color:var(--primary-light);">
+        📌 <strong>Tip:</strong> Take a clear photo of your ECG paper printout under good lighting.
+        Works with standard hospital ECG printouts. Powered by the <strong>erhmrai/ecg-image-data</strong> AI model.
+      </div>
+      <div class="drop-zone" id="dropZone3img">
+        <input type="file" id="ecgImageFile" accept="image/*" onchange="handleFile(3, this, 'image')"/>
+        <div class="drop-icon">🖼️</div>
+        <div class="drop-label">Drag & drop your ECG photo</div>
+        <div class="drop-hint">PNG, JPG — photo of ECG paper printout</div>
+      </div>
+      <div class="preview-box" id="preview3img" style="display:none">
+        <img class="preview-img" id="previewImg3img" src="" alt="Preview"/>
+        <div class="preview-info">
+          <div class="preview-name" id="previewName3img"></div>
+          <div class="preview-size" id="previewSize3img"></div>
+        </div>
+        <button class="preview-remove" onclick="removeFile(3,'image')">✕ Remove</button>
+      </div>
+
+      <!-- 4-class legend -->
+      <div style="margin-top:20px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;">
+        <div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:12px;">AI recognises these ECG patterns</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <div style="font-size:13px;display:flex;align-items:center;gap:8px;"><span style="color:var(--good);">●</span> Normal</div>
+          <div style="font-size:13px;display:flex;align-items:center;gap:8px;"><span style="color:var(--medium);">●</span> Abnormal Heartbeat</div>
+          <div style="font-size:13px;display:flex;align-items:center;gap:8px;"><span style="color:var(--medium);">●</span> History of MI</div>
+          <div style="font-size:13px;display:flex;align-items:center;gap:8px;"><span style="color:var(--immediate);">●</span> Myocardial Infarction</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="wizard-nav">
+      <button class="btn-ghost" onclick="goStep(2)">← Back</button>
+      <button class="btn-run" id="runBtn" onclick="runAnalysis()">
+        🧠 Run AI Analysis
+      </button>
+    </div>
+  </div>
+
+</div>
+
+<!-- Processing overlay -->
+<div class="processing-overlay" id="processingOverlay">
+  <div class="proc-rings">
+    <div class="proc-ring proc-ring-1"></div>
+    <div class="proc-ring proc-ring-2"></div>
+    <div class="proc-ring proc-ring-3"></div>
+    <div class="proc-icon">🧠</div>
+  </div>
+  <div class="proc-title">Analysing your health data…</div>
+  <div class="proc-step" id="procStep">Initialising AI models</div>
+</div>
+
+<script src="/static/js/wizard.js"></script>
+</body>
+</html>

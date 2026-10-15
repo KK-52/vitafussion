@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>VitaFusion AI — Book a Hospital</title>
+  <link rel="stylesheet" href="/static/css/vitafusion-new.css"/>
+</head>
+<body class="booking-page">
+
+<header class="booking-header">
+  <div style="display:flex;align-items:center;gap:12px;">
+    <a href="/results"><button class="back-btn">← Results</button></a>
+    <span style="font-weight:800;font-size:17px;margin-left:8px;">🫀 VitaFusion<span style="color:var(--primary-light)"> AI</span></span>
+  </div>
+</header>
+
+<div class="booking-body">
+  <h1 class="booking-title">🏥 Book a Hospital Near You</h1>
+  <p class="booking-sub">
+    Hospitals near <strong>{{ user.city | capitalize if user.city else 'your city' }}</strong> — Select one to confirm your appointment.
+  </p>
+
+  <!-- Token card (shown after booking) -->
+  <div class="token-card" id="tokenCard">
+    <div class="token-label">Your Appointment Token</div>
+    <div class="token-num" id="tokenNum">—</div>
+    <div class="token-hosp" id="tokenHosp"></div>
+    <div class="token-addr" id="tokenAddr"></div>
+    <div class="token-addr" id="tokenHospPhone" style="font-family:var(--mono);margin-bottom:16px;"></div>
+    <div class="sms-notice">📱 Token sent to your registered phone</div>
+    <div style="margin-top:28px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+      <a href="/dashboard" class="btn-dashboard">📊 Go to Dashboard</a>
+      <a href="/home"      class="btn-dashboard">🏠 Home</a>
+    </div>
+  </div>
+
+  <!-- Hospital selection -->
+  <div id="hospitalSelection">
+    <div class="hosp-grid" id="hospGrid">
+      {% for h in hospitals %}
+      <div class="hosp-card" id="hc-{{ h.id }}" onclick="selectHospital('{{ h.id }}')">
+        <div class="hosp-name">{{ h.name }}</div>
+        <div class="hosp-addr">📍 {{ h.address }}</div>
+        <div class="hosp-meta">
+          <span class="hosp-badge">{{ h.specialty }}</span>
+          <span class="hosp-rating">⭐ {{ h.rating }}</span>
+        </div>
+        <div class="hosp-phone">📞 {{ h.phone }}</div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <button class="btn-confirm" id="confirmBtn" onclick="confirmBooking()" disabled>
+      Confirm Appointment →
+    </button>
+  </div>
+</div>
+
+<script>
+  let selectedId = null;
+
+  function selectHospital(id) {
+    // Deselect previous
+    if (selectedId) document.getElementById('hc-' + selectedId)?.classList.remove('selected');
+    selectedId = id;
+    document.getElementById('hc-' + id).classList.add('selected');
+    document.getElementById('confirmBtn').disabled = false;
+  }
+
+  async function confirmBooking() {
+    if (!selectedId) return;
+    const btn = document.getElementById('confirmBtn');
+    btn.disabled = true; btn.textContent = 'Booking…';
+
+    try {
+      const res  = await fetch('/api/book-hospital', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ hospital_id: selectedId }),
+      });
+      const data = await res.json();
+
+      if (data.status === 'ok') {
+        // Hide selection, show token
+        document.getElementById('hospitalSelection').style.display = 'none';
+        document.getElementById('tokenNum').textContent   = data.token;
+        document.getElementById('tokenHosp').textContent  = data.hospital;
+        document.getElementById('tokenAddr').textContent  = '📍 ' + data.address;
+        document.getElementById('tokenHospPhone').textContent = '📞 ' + data.phone;
+        const tc = document.getElementById('tokenCard');
+        tc.classList.add('show');
+        tc.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } else {
+        alert('Booking failed: ' + (data.message || 'Unknown error'));
+        btn.disabled = false; btn.textContent = 'Confirm Appointment →';
+      }
+    } catch(err) {
+      alert('Network error. Please try again.');
+      btn.disabled = false; btn.textContent = 'Confirm Appointment →';
+    }
+  }
+</script>
+</body>
+</html>
